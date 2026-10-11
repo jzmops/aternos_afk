@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f1117"/>
+    </linearGradient>
+    <linearGradient id="botm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bgm)"/>
+  <rect x="168" y="130" width="176" height="200" rx="20" fill="url(#botm)"/>
+  <rect x="196" y="166" width="52" height="40" rx="8" fill="#0f1117"/>
+  <rect x="264" y="166" width="52" height="40" rx="8" fill="#0f1117"/>
+  <circle cx="222" cy="186" r="13" fill="#3b82f6"/>
+  <circle cx="290" cy="186" r="13" fill="#3b82f6"/>
+  <rect x="196" y="234" width="120" height="16" rx="8" fill="#0f1117"/>
+  <rect x="168" y="332" width="34" height="48" rx="6" fill="url(#botm)"/>
+  <rect x="310" y="332" width="34" height="48" rx="6" fill="url(#botm)"/>
+  <rect x="146" y="190" width="22" height="56" rx="6" fill="url(#botm)"/>
+  <rect x="344" y="190" width="22" height="56" rx="6" fill="url(#botm)"/>
+  <circle cx="256" cy="470" r="6" fill="#22c55e"/>
+</svg>
