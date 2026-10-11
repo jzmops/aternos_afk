@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const app = express();
-const port = 2323;
+const port = 3000;
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -17,4 +17,4 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(port, () => console.log(`[BOT] Keep-alive server on port ${port}`));
+app.listen(port, () => console.log(`[BOT] Web dashboard running on port ${port}`));

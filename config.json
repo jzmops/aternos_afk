@@ -32,6 +32,6 @@
 
   "webServer": {
     "enabled": true,
-    "port": 2323
+    "port": 3000
   }
 }

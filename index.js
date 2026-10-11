@@ -383,10 +383,10 @@ const wallCheckInterval = setInterval(() => {
   }
 }, 500);
 
-createBot();
-
 try {
   require("./keep_alive");
 } catch (e) {
   log("[BOT] Keep alive module not found, continuing without it.");
 }
+
+createBot();
