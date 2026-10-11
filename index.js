@@ -491,5 +491,4 @@ try {
   log("[BOT] Keep alive module not found, continuing without it.");
 }
 
-botRunning = true;
-createBot();
+log("[BOT] Ready. Press Start in the dashboard to connect.");

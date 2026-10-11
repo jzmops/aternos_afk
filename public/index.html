@@ -364,6 +364,10 @@
       background: #16a34a;
     }
 
+    .control-btn.start:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
     .control-btn.stop {
       background: var(--error);
       color: #450a0a;
@@ -371,6 +375,10 @@
 
     .control-btn.stop:hover:not(:disabled) {
       background: #dc2626;
+    }
+
+    .control-btn.stop:active:not(:disabled) {
+      transform: scale(0.97);
     }
 
     .control-row {
@@ -467,8 +475,8 @@
     <button id="installBtn">Install App</button>
 
     <div class="control-row">
-      <button class="control-btn start" id="startBtn" onclick="startBot()">Start Bot</button>
-      <button class="control-btn stop" id="stopBtn" onclick="stopBot()">Stop Bot</button>
+      <button class="control-btn start" id="startBtn" onclick="startBot()"><span class="spinner"></span><span class="btn-label">Start Bot</span></button>
+      <button class="control-btn stop" id="stopBtn" onclick="stopBot()" disabled><span class="spinner"></span><span class="btn-label">Stop Bot</span></button>
     </div>
 
     <div class="card">
@@ -681,12 +689,19 @@
     }
 
     function updateControlButtons(running) {
-      document.getElementById("startBtn").disabled = running;
-      document.getElementById("stopBtn").disabled = !running;
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      startBtn.classList.remove("loading");
+      stopBtn.classList.remove("loading");
+      startBtn.disabled = running;
+      stopBtn.disabled = !running;
     }
 
     async function startBot() {
-      addLog("Sending start command...");
+      const btn = document.getElementById("startBtn");
+      btn.classList.add("loading");
+      btn.disabled = true;
+      addLog("Starting bot...");
       try {
         const res = await fetch("/api/start", { method: "POST" });
         const data = await res.json();
@@ -694,11 +709,16 @@
         fetchStatus();
       } catch (err) {
         addLog("Failed to start bot");
+        btn.classList.remove("loading");
+        btn.disabled = false;
       }
     }
 
     async function stopBot() {
-      addLog("Sending stop command...");
+      const btn = document.getElementById("stopBtn");
+      btn.classList.add("loading");
+      btn.disabled = true;
+      addLog("Stopping bot...");
       try {
         const res = await fetch("/api/stop", { method: "POST" });
         const data = await res.json();
@@ -706,6 +726,8 @@
         fetchStatus();
       } catch (err) {
         addLog("Failed to stop bot");
+        btn.classList.remove("loading");
+        btn.disabled = false;
       }
     }
 
