@@ -491,7 +491,7 @@
         </div>
       </div>
       <div class="uptime-display">
-        <div class="label">Process Uptime</div>
+        <div class="label">Time on Server</div>
         <div class="timer" id="liveUptime">00:00:00</div>
         <div id="botStateBadge" class="bot-state-badge offline"><span class="dot"></span> Offline</div>
       </div>
@@ -600,6 +600,7 @@
 
     let serverUptime = 0;
     let lastFetchTime = Date.now();
+    let botOnServer = false;
 
     async function fetchStatus() {
       try {
@@ -644,6 +645,14 @@
             hv.className = "value" + (bs.health > 15 ? " green" : bs.health > 5 ? " amber" : " red");
           }
 
+          if (bs.botState === "online") {
+            serverUptime = bs.serverTime || 0;
+            lastFetchTime = Date.now();
+            botOnServer = true;
+          } else {
+            botOnServer = false;
+          }
+
           updateControlButtons(bs.running);
         }
       } catch (err) {
@@ -653,11 +662,16 @@
         const stateBadge = document.getElementById("botStateBadge");
         stateBadge.className = "bot-state-badge offline";
         stateBadge.innerHTML = '<span class="dot"></span> Offline';
+        botOnServer = false;
         addLog("Failed to fetch status");
       }
     }
 
     function updateLiveUptime() {
+      if (!botOnServer) {
+        document.getElementById("liveUptime").textContent = "00:00:00";
+        return;
+      }
       const elapsed = serverUptime + (Date.now() - lastFetchTime) / 1000;
       const h = Math.floor(elapsed / 3600);
       const m = Math.floor((elapsed % 3600) / 60);

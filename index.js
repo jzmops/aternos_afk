@@ -11,6 +11,8 @@ let isMovingForward = false;
 let lastWallTurn = 0;
 let botRunning = false;
 let reconnectTimer = null;
+let loginTime = null;
+let spawnEventReceived = false;
 
 function getBotState() {
   let state = "offline";
@@ -25,6 +27,7 @@ function getBotState() {
     running: botRunning,
     health: bot && bot.entity ? bot.health : null,
     food: bot && bot.entity ? bot.food : null,
+    serverTime: loginTime ? (Date.now() - loginTime) / 1000 : 0,
     position: bot && bot.entity ? {
       x: Math.floor(bot.entity.position.x),
       y: Math.floor(bot.entity.position.y),
@@ -50,6 +53,8 @@ function stopBotProcess() {
     try { bot.quit("Stopped via dashboard"); } catch (e) {}
     bot = null;
   }
+  loginTime = null;
+  spawnEventReceived = false;
   log("[BOT] Bot stopped via dashboard.");
 }
 
@@ -59,32 +64,48 @@ function log(msg) {
 }
 
 function createBot() {
-  log("[BOT] Connecting to server...");
+  log(`[BOT] Connecting to ${config.ip}:${config.port} as ${config.name}...`);
+  spawnEventReceived = false;
 
-  bot = mineflayer.createBot({
+  const botOptions = {
     host: config.ip,
     port: config.port,
     username: config.name,
-    version: config.version,
     auth: config.auth || "offline",
-  });
+  };
+
+  if (config.version && config.version !== "auto") {
+    botOptions.version = config.version;
+  }
+
+  bot = mineflayer.createBot(botOptions);
 
   bot.on("error", (err) => {
-    if (err.code === "ECONNREFUSED" || err.code === "ECONNRESET") {
+    if (err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ETIMEDOUT") {
       log("[BOT] Connection failed: The server is offline, the IP/port is incorrect, or your host is blocking the connection.");
+      log("[BOT] Server: " + config.ip + ":" + config.port);
     } else {
       log("[BOT] Error: " + err);
     }
   });
 
   bot.on("login", () => {
+    loginTime = Date.now();
     log(`[BOT] Logged in as ${bot.username}`);
     reconnectAttempts = 0;
+  });
+
+  bot.once("spawn", () => {
+    spawnEventReceived = true;
+    log("[BOT] Spawned in world. Starting bot logic...");
     startBot();
   });
 
   bot.on("end", () => handleDisconnect("end"));
-  bot.on("kicked", (reason) => handleDisconnect("kicked: " + reason));
+  bot.on("kicked", (reason) => {
+    log("[BOT] Kicked from server: " + reason);
+    handleDisconnect("kicked: " + reason);
+  });
 
   bot.on("health", () => {
     if (bot.health <= 0) {
@@ -399,6 +420,8 @@ function handleDisconnect(reason) {
   log("[BOT] Disconnected (" + reason + ")");
   stopIntervals();
   bot = null;
+  loginTime = null;
+  spawnEventReceived = false;
 
   if (!botRunning) return;
 
