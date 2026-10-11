@@ -40,8 +40,11 @@ function getBotState() {
 
 function startBotProcess() {
   if (botRunning) { log("[BOT] Bot is already running."); return; }
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   botRunning = true;
   reconnectAttempts = 0;
+  loginTime = null;
+  spawnEventReceived = false;
   createBot();
 }
 
@@ -50,8 +53,10 @@ function stopBotProcess() {
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   stopIntervals();
   if (bot) {
-    try { bot.quit("Stopped via dashboard"); } catch (e) {}
+    const oldBot = bot;
     bot = null;
+    try { oldBot.quit("Stopped via dashboard"); } catch (e) {}
+    oldBot.removeAllListeners();
   }
   loginTime = null;
   spawnEventReceived = false;
@@ -66,45 +71,66 @@ function log(msg) {
 function createBot() {
   log(`[BOT] Connecting to ${config.ip}:${config.port} as ${config.name}...`);
   spawnEventReceived = false;
+  loginTime = null;
 
   const botOptions = {
     host: config.ip,
     port: config.port,
     username: config.name,
     auth: config.auth || "offline",
+    hideErrors: false,
   };
 
   if (config.version && config.version !== "auto") {
     botOptions.version = config.version;
   }
 
-  bot = mineflayer.createBot(botOptions);
+  try {
+    bot = mineflayer.createBot(botOptions);
+  } catch (err) {
+    log("[BOT] Failed to create bot: " + err.message);
+    handleDisconnect("create error");
+    return;
+  }
+
+  const connectTimeout = setTimeout(() => {
+    if (!spawnEventReceived && bot) {
+      log("[BOT] Connection timed out after 30s. Server may be offline or starting up.");
+      try { bot.end(); } catch (e) {}
+    }
+  }, 30000);
 
   bot.on("error", (err) => {
-    if (err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ETIMEDOUT") {
-      log("[BOT] Connection failed: The server is offline, the IP/port is incorrect, or your host is blocking the connection.");
-      log("[BOT] Server: " + config.ip + ":" + config.port);
-    } else {
-      log("[BOT] Error: " + err);
+    log("[BOT] Error: " + (err.code || "") + " " + (err.message || err));
+    if (err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ETIMEDOUT" || err.code === "EHOSTUNREACH" || err.code === "ENOTFOUND") {
+      log("[BOT] Cannot reach server at " + config.ip + ":" + config.port + " — is it online?");
     }
   });
 
   bot.on("login", () => {
     loginTime = Date.now();
-    log(`[BOT] Logged in as ${bot.username}`);
+    log("[BOT] Logged in as " + bot.username);
     reconnectAttempts = 0;
   });
 
   bot.once("spawn", () => {
+    clearTimeout(connectTimeout);
     spawnEventReceived = true;
-    log("[BOT] Spawned in world. Starting bot logic...");
+    log("[BOT] Spawned in world. Bot is now active.");
     startBot();
   });
 
-  bot.on("end", () => handleDisconnect("end"));
+  bot.on("end", () => {
+    clearTimeout(connectTimeout);
+    handleDisconnect("end");
+  });
+
   bot.on("kicked", (reason) => {
-    log("[BOT] Kicked from server: " + reason);
-    handleDisconnect("kicked: " + reason);
+    clearTimeout(connectTimeout);
+    let cleanReason = reason;
+    try { cleanReason = JSON.parse(reason).text || JSON.parse(reason).extra[0].text || reason; } catch (e) {}
+    log("[BOT] Kicked from server: " + cleanReason);
+    handleDisconnect("kicked: " + cleanReason);
   });
 
   bot.on("health", () => {
@@ -419,7 +445,10 @@ function handleCommand(username, message) {
 function handleDisconnect(reason) {
   log("[BOT] Disconnected (" + reason + ")");
   stopIntervals();
-  bot = null;
+  if (bot) {
+    try { bot.removeAllListeners(); } catch (e) {}
+    bot = null;
+  }
   loginTime = null;
   spawnEventReceived = false;
 
@@ -439,7 +468,7 @@ function handleDisconnect(reason) {
   }
 
   const delay = config.reconnect.delay * 1000;
-  log(`[BOT] Reconnecting in ${config.reconnect.delay}s... (attempt ${reconnectAttempts})`);
+  log("[BOT] Reconnecting in " + config.reconnect.delay + "s... (attempt " + reconnectAttempts + ")");
   reconnectTimer = setTimeout(createBot, delay);
 }
 
