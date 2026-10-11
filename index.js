@@ -9,6 +9,49 @@ let combatInterval = null;
 let reconnectAttempts = 0;
 let isMovingForward = false;
 let lastWallTurn = 0;
+let botRunning = false;
+let reconnectTimer = null;
+
+function getBotState() {
+  let state = "offline";
+  if (botRunning && bot && bot.entity) {
+    if (bot.health <= 0) state = "dead";
+    else state = "online";
+  } else if (botRunning) {
+    state = "connecting";
+  }
+  return {
+    botState: state,
+    running: botRunning,
+    health: bot && bot.entity ? bot.health : null,
+    food: bot && bot.entity ? bot.food : null,
+    position: bot && bot.entity ? {
+      x: Math.floor(bot.entity.position.x),
+      y: Math.floor(bot.entity.position.y),
+      z: Math.floor(bot.entity.position.z),
+    } : null,
+    movement: config.movement.enabled,
+    combat: config.combat.enabled,
+  };
+}
+
+function startBotProcess() {
+  if (botRunning) { log("[BOT] Bot is already running."); return; }
+  botRunning = true;
+  reconnectAttempts = 0;
+  createBot();
+}
+
+function stopBotProcess() {
+  botRunning = false;
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  stopIntervals();
+  if (bot) {
+    try { bot.quit("Stopped via dashboard"); } catch (e) {}
+    bot = null;
+  }
+  log("[BOT] Bot stopped via dashboard.");
+}
 
 function log(msg) {
   const ts = new Date().toLocaleTimeString();
@@ -355,21 +398,26 @@ function handleCommand(username, message) {
 function handleDisconnect(reason) {
   log("[BOT] Disconnected (" + reason + ")");
   stopIntervals();
+  bot = null;
+
+  if (!botRunning) return;
 
   if (!config.reconnect.enabled) {
     log("[BOT] Reconnect is disabled. Bot will not reconnect.");
+    botRunning = false;
     return;
   }
 
   reconnectAttempts++;
   if (config.reconnect.maxAttempts > 0 && reconnectAttempts > config.reconnect.maxAttempts) {
     log("[BOT] Max reconnect attempts reached. Giving up.");
+    botRunning = false;
     return;
   }
 
   const delay = config.reconnect.delay * 1000;
   log(`[BOT] Reconnecting in ${config.reconnect.delay}s... (attempt ${reconnectAttempts})`);
-  setTimeout(createBot, delay);
+  reconnectTimer = setTimeout(createBot, delay);
 }
 
 const wallCheckInterval = setInterval(() => {
@@ -383,10 +431,13 @@ const wallCheckInterval = setInterval(() => {
   }
 }, 500);
 
+module.exports = { getBotState, startBotProcess, stopBotProcess };
+
 try {
   require("./keep_alive");
 } catch (e) {
   log("[BOT] Keep alive module not found, continuing without it.");
 }
 
+botRunning = true;
 createBot();

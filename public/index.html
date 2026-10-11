@@ -335,6 +335,108 @@
       background: var(--surface);
     }
 
+    .control-btn {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .control-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .control-btn.start {
+      background: var(--success);
+      color: #052e16;
+    }
+
+    .control-btn.start:hover:not(:disabled) {
+      background: #16a34a;
+    }
+
+    .control-btn.stop {
+      background: var(--error);
+      color: #450a0a;
+    }
+
+    .control-btn.stop:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .uptime-display {
+      background: var(--surface-2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    .uptime-display .label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .uptime-display .timer {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-light);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+    }
+
+    .bot-state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .bot-state-badge.online {
+      background: rgba(34,197,94,0.15);
+      color: var(--success);
+    }
+
+    .bot-state-badge.connecting {
+      background: rgba(245,158,11,0.15);
+      color: var(--warning);
+    }
+
+    .bot-state-badge.offline {
+      background: rgba(239,68,68,0.15);
+      color: var(--error);
+    }
+
+    .bot-state-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+
     .card-header-row {
       display: flex;
       justify-content: space-between;
@@ -364,6 +466,11 @@
 
     <button id="installBtn">Install App</button>
 
+    <div class="control-row">
+      <button class="control-btn start" id="startBtn" onclick="startBot()">Start Bot</button>
+      <button class="control-btn stop" id="stopBtn" onclick="stopBot()">Stop Bot</button>
+    </div>
+
     <div class="card">
       <div class="card-header-row">
         <h2>Bot Status</h2>
@@ -371,17 +478,22 @@
       </div>
       <div class="stat-grid" id="statGrid">
         <div class="stat">
-          <div class="label">Uptime</div>
-          <div class="value" id="uptime">--</div>
-        </div>
-        <div class="stat">
           <div class="label">Memory</div>
           <div class="value" id="memory">--</div>
         </div>
         <div class="stat">
-          <div class="label">Status</div>
-          <div class="value amber" id="statusVal">--</div>
+          <div class="label">Health</div>
+          <div class="value" id="healthVal">--</div>
         </div>
+        <div class="stat">
+          <div class="label">Food</div>
+          <div class="value" id="foodVal">--</div>
+        </div>
+      </div>
+      <div class="uptime-display">
+        <div class="label">Process Uptime</div>
+        <div class="timer" id="liveUptime">00:00:00</div>
+        <div id="botStateBadge" class="bot-state-badge offline"><span class="dot"></span> Offline</div>
       </div>
       <div style="margin-top: 14px;">
         <button class="refresh-btn" onclick="fetchStatus()">Refresh</button>
@@ -486,35 +598,101 @@
       });
     });
 
+    let serverUptime = 0;
+    let lastFetchTime = Date.now();
+
     async function fetchStatus() {
       try {
         const res = await fetch("/status");
         const data = await res.json();
-        document.getElementById("uptime").textContent = formatUptime(data.uptime);
+        serverUptime = data.uptime;
+        lastFetchTime = Date.now();
         document.getElementById("memory").textContent = data.memory;
-        document.getElementById("statusVal").textContent = "OK";
-        document.getElementById("statusVal").className = "value green";
-        const badge = document.getElementById("connBadge");
-        badge.className = "badge online";
-        badge.innerHTML = '<span class="dot"></span> Online';
-        addLog("Status fetched — uptime: " + formatUptime(data.uptime));
+
+        if (data.bot) {
+          const bs = data.bot;
+          const badge = document.getElementById("connBadge");
+          const stateBadge = document.getElementById("botStateBadge");
+
+          if (bs.botState === "online") {
+            badge.className = "badge online";
+            badge.innerHTML = '<span class="dot"></span> Online';
+            stateBadge.className = "bot-state-badge online";
+            stateBadge.innerHTML = '<span class="dot"></span> In Game';
+          } else if (bs.botState === "connecting") {
+            badge.className = "badge offline";
+            badge.innerHTML = '<span class="dot"></span> Connecting';
+            stateBadge.className = "bot-state-badge connecting";
+            stateBadge.innerHTML = '<span class="dot"></span> Connecting';
+          } else if (bs.botState === "dead") {
+            badge.className = "badge offline";
+            badge.innerHTML = '<span class="dot"></span> Dead';
+            stateBadge.className = "bot-state-badge offline";
+            stateBadge.innerHTML = '<span class="dot"></span> Respawning';
+          } else {
+            badge.className = "badge offline";
+            badge.innerHTML = '<span class="dot"></span> Offline';
+            stateBadge.className = "bot-state-badge offline";
+            stateBadge.innerHTML = '<span class="dot"></span> Offline';
+          }
+
+          document.getElementById("healthVal").textContent = bs.health !== null ? bs.health.toFixed(0) : "--";
+          document.getElementById("foodVal").textContent = bs.food !== null ? bs.food : "--";
+
+          if (bs.health !== null) {
+            const hv = document.getElementById("healthVal");
+            hv.className = "value" + (bs.health > 15 ? " green" : bs.health > 5 ? " amber" : " red");
+          }
+
+          updateControlButtons(bs.running);
+        }
       } catch (err) {
-        document.getElementById("statusVal").textContent = "ERR";
-        document.getElementById("statusVal").className = "value red";
         const badge = document.getElementById("connBadge");
         badge.className = "badge offline";
         badge.innerHTML = '<span class="dot"></span> Offline';
+        const stateBadge = document.getElementById("botStateBadge");
+        stateBadge.className = "bot-state-badge offline";
+        stateBadge.innerHTML = '<span class="dot"></span> Offline';
         addLog("Failed to fetch status");
       }
     }
 
-    function formatUptime(seconds) {
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      const s = Math.floor(seconds % 60);
-      if (h > 0) return h + "h " + m + "m";
-      if (m > 0) return m + "m " + s + "s";
-      return s + "s";
+    function updateLiveUptime() {
+      const elapsed = serverUptime + (Date.now() - lastFetchTime) / 1000;
+      const h = Math.floor(elapsed / 3600);
+      const m = Math.floor((elapsed % 3600) / 60);
+      const s = Math.floor(elapsed % 60);
+      document.getElementById("liveUptime").textContent =
+        String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function updateControlButtons(running) {
+      document.getElementById("startBtn").disabled = running;
+      document.getElementById("stopBtn").disabled = !running;
+    }
+
+    async function startBot() {
+      addLog("Sending start command...");
+      try {
+        const res = await fetch("/api/start", { method: "POST" });
+        const data = await res.json();
+        addLog(data.message);
+        fetchStatus();
+      } catch (err) {
+        addLog("Failed to start bot");
+      }
+    }
+
+    async function stopBot() {
+      addLog("Sending stop command...");
+      try {
+        const res = await fetch("/api/stop", { method: "POST" });
+        const data = await res.json();
+        addLog(data.message);
+        fetchStatus();
+      } catch (err) {
+        addLog("Failed to stop bot");
+      }
     }
 
     function addLog(msg) {
@@ -532,7 +710,8 @@
     }
 
     fetchStatus();
-    setInterval(fetchStatus, 15000);
+    setInterval(fetchStatus, 5000);
+    setInterval(updateLiveUptime, 1000);
     addLog("Dashboard initialized");
   </script>
 </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "afkbot-v1";
+const CACHE_NAME = "afkbot-v2";
 const PRECACHE_URLS = [
   "/",
   "/manifest.json",
