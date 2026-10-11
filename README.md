@@ -1,66 +1,98 @@
-# Aternos AFK Bot
+# Minecraft AFK Bot
 
-This is an easy-to-use AFK bot made for Minecraft Java Edition servers on Aternos. Just set it up and let it join your server it’ll move around automatically to keep your server online, so you don’t have to worry about getting kicked for being AFK.
-
----
+A smart AFK bot for Minecraft Java Edition servers (built for Aternos). The bot wanders around, attacks hostile mobs, detects walls and turns away, and auto-reconnects when disconnected.
 
 ## Features
 
-- **Easy setup:** Just edit a config file and run!
-- **Random movement:** The bot moves and looks around to avoid AFK kicks.
-- **Automatic reconnect:** If disconnected, the bot will try to reconnect after 10 seconds.
-- **Keep-alive web server:** Optional web server for platforms like Replit/Heroku.
-- **No main account risk:** Use any alternate or offline Minecraft account.
+- **Adjustable movement** — control how often and how long the bot moves
+- **Sprint toggle** — choose whether the bot sprints or walks
+- **Wall detection** — scans ahead and turns the other way when blocked
+- **Jump over obstacles** — hops over 1-block obstacles instead of turning
+- **Hostile mob combat** — attacks zombies, skeletons, creepers, and more
+- **Auto-reconnect** — reconnects after disconnection with configurable delay
+- **In-game chat commands** — adjust settings live without restarting
 
----
+## Setup
 
-## Requirements
+1. Edit `config.json` with your server details
+2. Run `npm install`
+3. Run `npm start`
 
-- [Node.js](https://nodejs.org/) (v16 or newer recommended)
-- An Aternos Minecraft Java server (get your server IP and port from the Aternos dashboard)
-
----
-
-## Note
-
-> This bot is designed to work best with Aternos servers running Minecraft version **1.16**.  
-> If you want to use a different Minecraft version, you’ll need to install the following plugins on your server:
->
-> - **ViaRewind**
-> - **ViaVersion**
-> - **ViaBackwards**
->
-> These plugins let players (and bots) using other Minecraft versions join your server.
-
----
-
-## Installation
-
-1. **Clone the Repository**
-
-   ```sh
-   git clone https://github.com/lovelak-pro/aternos_afk.git
-   cd aternos_afk
-   ```
-
----
-
-## Configuration
-
-Before running the bot, you need to set up the `config.json` file with your server details.  
-Here’s how your `config.json` should look:
+## Config
 
 ```json
 {
-  "ip": "your-server.aternos.me",
+  "ip": "yourserver.aternos.me",
   "port": 12345,
-  "name": "YourBotName",
-  "version": "1.21.4"
+  "name": "BotName",
+  "version": "1.21.4",
+  "auth": "offline",
+
+  "movement": {
+    "enabled": true,
+    "interval": 8,
+    "moveDuration": 3,
+    "sprint": true,
+    "jumpOverObstacles": true,
+    "avoidWalls": true,
+    "wallDetectionDistance": 1.5,
+    "turnArc": 120
+  },
+
+  "combat": {
+    "enabled": true,
+    "hostileOnly": true,
+    "range": 4.5,
+    "attackInterval": 1.0
+  },
+
+  "reconnect": {
+    "enabled": true,
+    "delay": 10,
+    "maxAttempts": 0
+  }
 }
 ```
 
----
+### Movement settings
 
-## Disclaimer
+| Setting | Description |
+|---|---|
+| `interval` | Seconds between each move cycle |
+| `moveDuration` | How long each move lasts in seconds |
+| `sprint` | Whether the bot sprints |
+| `avoidWalls` | Enables wall detection and turning |
+| `wallDetectionDistance` | How far ahead to check for walls (blocks) |
+| `jumpOverObstacles` | Jump over 1-block tall obstacles |
 
-This bot is for educational purposes only. Use it responsibly and at your own risk.
+### Combat settings
+
+| Setting | Description |
+|---|---|
+| `hostileOnly` | Only attack hostile mobs (not animals) |
+| `range` | Attack range in blocks |
+| `attackInterval` | Seconds between attacks |
+
+## In-Game Chat Commands
+
+Type these in game chat to control the bot live:
+
+| Command | Description |
+|---|---|
+| `!status` | Show bot health, food, and module status |
+| `!move on/off` | Enable or disable movement |
+| `!interval <seconds>` | Set movement interval |
+| `!duration <seconds>` | Set how long each move lasts |
+| `!sprint on/off` | Toggle sprinting |
+| `!combat on/off` | Enable or disable combat |
+| `!range <blocks>` | Set combat attack range |
+| `!settings` | Show current settings summary |
+| `!help` | List all commands |
+
+## How Wall Detection Works
+
+Every 500ms while moving, the bot scans the block ahead in its current direction. If it finds a solid wall it can't jump over, it checks all 8 compass directions for open space and turns toward the clearest path. This prevents the bot from getting stuck against walls, fences, or buildings.
+
+## Keep-Alive Server
+
+A small web server runs on port 2323 to keep the bot process alive on hosting platforms. Visit `http://localhost:2323/status` for uptime info.
