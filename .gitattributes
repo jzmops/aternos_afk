@@ -1,0 +1,9 @@
+# Windows batch files are stored with CRLF endings inside the file itself
+# (-text, i.e. no conversion). cmd.exe can mis-parse multi-line blocks that use
+# bare LF, and storing CRLF means every route to the file keeps it: a clone, and
+# the "Download ZIP" button, which archives the committed bytes.
+*.bat -text
+
+# Shell scripts must keep LF endings so Linux, macOS and Raspberry Pi OS can
+# execute them - a CRLF shebang fails with "bad interpreter: No such file".
+*.sh text eol=lf

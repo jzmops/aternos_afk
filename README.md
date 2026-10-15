@@ -24,13 +24,26 @@ reconnects on its own if the server restarts.
 
 ## Setup
 
+**One file, no commands:** install [Node.js](https://nodejs.org) LTS — ticking
+**"Add to PATH"** on Windows — then
+
+- **Windows:** double-click **`start.bat`**
+- **Linux / macOS / Raspberry Pi:** run **`./start.sh`**
+
+That downloads the dependencies on the first run, starts the dashboard, opens it
+in your browser and connects the bot for you. Nothing else to type.
+
+**Or by hand:**
+
 ```bash
 npm install
 npm start
 ```
 
 Then open <http://localhost:3000> (or set `PORT` to use a different port, for
-example `PORT=3002 npm start`).
+example `PORT=3002 npm start`). The launchers hand the bot straight to the
+server; if you would rather it wait for the **Start bot** button, run them with
+`AFK_NO_AUTOSTART=1` set.
 
 1. Type your server address and port in the **Server** panel
 2. Adjust **Behaviour** (movement, combat, reconnect)
@@ -161,3 +174,5 @@ its own once the server is online.
 | `keep_alive.js` | Express web server: dashboard + JSON/SSE API |
 | `public/index.html` | The dashboard (single file, no build step) |
 | `config.json` | Saved settings |
+| `start.bat` / `start.sh` | One-click start for Windows / Linux, macOS and Raspberry Pi |
+| `scripts/launch.js` | What those two run: checks Node.js, installs dependencies, opens the dashboard, connects the bot |

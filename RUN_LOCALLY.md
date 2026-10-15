@@ -15,7 +15,8 @@ You are doing **three** things, in this order:
 
 1. **Get the bot's files onto the computer** that will run it → [Part 1](#part-1--get-the-code--read-this-first)
 2. **Install one free program** it needs (Node.js) → [Part 0](#part-0--what-you-need-to-install)
-3. **Start it, then stop the PC sleeping** → [Part 2](#part-2--first-run-test-it) and [Part 5](#part-5--stop-the-pc-from-sleeping-windows)
+3. **Double-click `start.bat`** (`./start.sh` on Linux/macOS), then stop the PC
+   sleeping → [Part 2](#part-2--first-run-test-it) and [Part 5](#part-5--stop-the-pc-from-sleeping-windows)
 
 That is the whole task. Parts 3, 4, 6, 7 and 8 are optional extras
 (auto-restart, auto-start at boot, watching it from your phone, Linux, Android).
@@ -36,11 +37,22 @@ You do **not** need them to get the bot online today.
 | **PM2** | An optional babysitter: if the bot ever crashes, PM2 starts it again. Not needed for your first run. |
 | **sleep / hibernate** | Windows shutting itself down after being idle. A sleeping PC is not connected, so the bot goes offline. [Part 5](#part-5--stop-the-pc-from-sleeping-windows) fixes it. |
 
-### Just want it running today? (Windows)
+### Just want it running today?
 
-1. Install **Node.js LTS** from https://nodejs.org — during setup, **tick the box that says "Add to PATH"**. This step matters; skipping it is the #1 beginner problem.
-2. Install **Git** from https://git-scm.com/downloads (or skip it and use the ZIP in [Part 1](#part-1--get-the-code--read-this-first)).
-3. Press `Win`, type **PowerShell**, open it, and paste these five lines one at a time:
+**The one-click way.** Install **Node.js LTS** from https://nodejs.org — during
+setup **tick the box that says "Add to PATH"**. That is the only thing you have
+to install, and skipping that tick is the #1 beginner problem. Then put the
+project folder on your PC (see [Part 1](#part-1--get-the-code--read-this-first))
+and **double-click `start.bat`**.
+
+That is the whole job. It downloads the bot's parts the first time, starts the
+bot, opens the dashboard in your browser and connects to your server. On Linux,
+macOS or a Raspberry Pi, run `./start.sh` instead — same thing, same result.
+
+**Or do it by hand.** Same result, one command at a time:
+
+1. Install **Git** from https://git-scm.com/downloads (or skip it and use the ZIP in [Part 1](#part-1--get-the-code--read-this-first)).
+2. Press `Win`, type **PowerShell**, open it, and paste these five lines one at a time:
 
 ```powershell
 cd $HOME\Desktop
@@ -50,11 +62,28 @@ npm ci
 npm start
 ```
 
-4. Open **http://localhost:3000** in your browser and continue from step 2 of [Part 2](#part-2--first-run-test-it).
+3. Open **http://localhost:3000** in your browser and continue from step 2 of [Part 2](#part-2--first-run-test-it).
 
 > **No Git? No problem.** If installing Git or using `git clone` is a hassle, skip
 > to [Part 1](#part-1--get-the-code--read-this-first) — Option B downloads the same
 > files as a ZIP, needs no extra software, and works equally well.
+
+### What start.bat actually does
+
+Four things, in order — nothing hidden, and nothing is deleted:
+
+1. **Checks Node.js.** If it is missing, it opens https://nodejs.org and tells you
+   what to install instead of flashing an error and vanishing.
+2. **Downloads the bot's parts** (`npm ci`) — but only the first time. Later runs
+   skip straight past it.
+3. **Starts the bot** on the port from `config.json` and **opens the dashboard**
+   in your browser.
+4. **Connects to your server** straight away, so you do not have to press
+   **Start bot**. Want it to wait for the button instead? See the note in
+   [Part 2](#part-2--first-run-test-it).
+
+The window stays open while the bot runs: closing it, or pressing **Ctrl+C**,
+stops the bot.
 
 ### What each of those five lines did
 
@@ -135,7 +164,8 @@ npm ci
 
 ## Part 2 — First run (test it)
 
-In the project folder:
+In the project folder, either **double-click `start.bat`** (Windows) / run
+**`./start.sh`** (Linux, macOS, Raspberry Pi), or start it by hand with:
 
 ```
 npm start
@@ -160,6 +190,12 @@ Now:
 
 Stop it with `Ctrl+C` in the terminal.
 
+> Using `start.bat` or `start.sh`? They already opened the dashboard and
+> connected the bot, so steps 1 and 5 are done for you. If you would rather the
+> bot waited for the **Start bot** button, set `AFK_NO_AUTOSTART=1` first —
+> Windows PowerShell: `$env:AFK_NO_AUTOSTART=1`, then `node scripts\launch.js`;
+> Linux/macOS: `AFK_NO_AUTOSTART=1 ./start.sh`.
+
 > Windows may pop up a **Firewall** dialog the first time. If you only use the
 > dashboard on this PC, you can pick *Cancel* — it's only needed for LAN access
 > (Part 6). Allowing it on *Private networks* is fine too.
@@ -182,6 +218,9 @@ pm2 logs afk-bot        # live console output
 pm2 restart afk-bot     # after changing code
 pm2 stop afk-bot        # stop it
 ```
+
+Point PM2 at `index.js`, not at `start.bat` — the launcher exists to be
+double-clicked by a human, and it would try to open a browser on every boot.
 
 PM2 restarts the bot if the process ever crashes. (The bot also has its own
 crash guard, so this is a second safety net.)
@@ -218,6 +257,10 @@ schtasks /delete /tn "AFK Bot" /f
 
 **Easiest alternative:** press `Win+R`, type `shell:startup`, and drop a
 shortcut to `start-afk-bot.bat` in the folder that opens.
+
+**Not using PM2?** Point the task (or the `shell:startup` shortcut) at
+`start.bat` in the project folder instead — it starts the bot on its own, just
+leave the window it opens alone.
 
 Notes:
 
@@ -316,6 +359,10 @@ git clone https://github.com/jzmops/aternos_afk.git
 cd aternos_afk
 npm ci
 ```
+
+Check it works with `./start.sh` (it installs nothing that is already there,
+starts the dashboard and connects the bot) — press `Ctrl+C` to stop it again
+before setting up the service below.
 
 Create a service so it runs at boot and restarts on crash —
 `sudo nano /etc/systemd/system/afk-bot.service`:
