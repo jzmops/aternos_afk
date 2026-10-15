@@ -26,25 +26,11 @@ set "AFK_ZIP=%TEMP%\afk-node-%AFK_ARCH%.zip"
 set "AFK_NEED=1"
 if exist "%AFK_RUNTIME%\node.exe" set "AFK_NEED=0"
 
-REM Can this PC do the download and the unpacking? Answered up here, because a
-REM value set inside a bracket block is not visible to the same block.
+REM Which tool does the download? Answered up here, because a value set inside a
+REM bracket block is not visible to the same block.
 set "AFK_DOWNLOADER=curl"
 where curl >nul 2>nul
 if errorlevel 1 set "AFK_DOWNLOADER=powershell"
-set "AFK_HAVE_TAR=1"
-where tar >nul 2>nul
-if errorlevel 1 set "AFK_HAVE_TAR=0"
-
-if "%AFK_NEED%"=="1" if "%AFK_HAVE_TAR%"=="0" (
-  echo.
-  echo   This Windows is too old for the built-in tar command that unpacks
-  echo   the download. Install Node.js from https://nodejs.org instead and
-  echo   then double-click start.bat.
-  echo.
-  start "" https://nodejs.org/en/download
-  pause
-  exit /b 1
-)
 
 if "%AFK_NEED%"=="1" (
   echo.
@@ -70,28 +56,28 @@ if "%AFK_NEED%"=="1" (
     exit /b 1
   )
 
+  REM Unpack it, then leave the contents directly in runtime, because the
+  REM archive wraps them in a node-version-win folder. Two ways are tried -
+  REM the built-in tar, then PowerShell - and the result is checked either way.
+  echo   Unpacking...
+  rmdir /s /q "%AFK_RUNTIME%" 2>nul
   mkdir "%AFK_RUNTIME%" 2>nul
-  tar -xf "%AFK_ZIP%" -C "%AFK_RUNTIME%" --strip-components=1
+  tar -xf "%AFK_ZIP%" -C "%AFK_RUNTIME%" --strip-components=1 2>nul
 
-  if errorlevel 1 (
-    echo.
-    echo   [!] Could not unpack the download, so nothing was installed.
-    echo       Install Node.js from https://nodejs.org and use start.bat.
-    echo.
+  if not exist "%AFK_RUNTIME%\node.exe" (
     rmdir /s /q "%AFK_RUNTIME%" 2>nul
-    del /f /q "%AFK_ZIP%" 2>nul
-    pause
-    exit /b 1
+    mkdir "%AFK_RUNTIME%" 2>nul
+    powershell -NoProfile -Command "Expand-Archive -LiteralPath '%AFK_ZIP%' -DestinationPath '%AFK_RUNTIME%' -Force; $inner = Get-ChildItem -LiteralPath '%AFK_RUNTIME%' -Directory | Select-Object -First 1; if ($inner) { Get-ChildItem -LiteralPath $inner.FullName -Force | Move-Item -Destination '%AFK_RUNTIME%' -Force }"
   )
 
   del /f /q "%AFK_ZIP%" 2>nul
 
   if not exist "%AFK_RUNTIME%\node.exe" (
     echo.
-    echo   [!] The download unpacked but node.exe is not in the runtime
-    echo       folder. Install Node.js from https://nodejs.org and use
-    echo       start.bat instead.
+    echo   [!] Could not unpack the download, so nothing was installed.
+    echo       Install Node.js from https://nodejs.org and use start.bat.
     echo.
+    rmdir /s /q "%AFK_RUNTIME%" 2>nul
     pause
     exit /b 1
   )
