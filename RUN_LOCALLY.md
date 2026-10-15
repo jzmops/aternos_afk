@@ -52,10 +52,9 @@ npm start
 
 4. Open **http://localhost:3000** in your browser and continue from step 2 of [Part 2](#part-2--first-run-test-it).
 
-> **Wait — check this before you clone.** The copy currently on GitHub is an
-> *older* version of the bot (old dashboard, no water avoidance). Ask me to
-> publish the current version first, or I can hand you the current files as a
-> ZIP instead. Same warning in [Part 1](#part-1--get-the-code--read-this-first).
+> **No Git? No problem.** If installing Git or using `git clone` is a hassle, skip
+> to [Part 1](#part-1--get-the-code--read-this-first) — Option B downloads the same
+> files as a ZIP, needs no extra software, and works equally well.
 
 ### What each of those five lines did
 
@@ -107,12 +106,10 @@ PATH" — reinstall Node and tick that box, then open a *new* terminal.
 
 ---
 
-## Part 1 — Get the code ⚠️ read this first
+## Part 1 — Get the code — read this first
 
-> **Important:** the version currently on GitHub `main` is **older** than the
-> version of the bot you have been using — it has the old dashboard and no water
-> avoidance. Ask me to commit and push the current work first, then use the
-> steps below. Otherwise you will be running a different, older bot.
+Pick **one** of the two options below. They give you exactly the same files;
+Option A is easier to update later, Option B needs no extra software.
 
 **Option A — Git (recommended, easy to update later)**
 
