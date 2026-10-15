@@ -1,35 +1,33 @@
 {
   "ip": "petergriffin420.aternos.me",
   "port": 25679,
-  "name": "cheese_gurber",
+  "name": "peter_griffin",
   "version": "auto",
   "auth": "offline",
-
+  "authmePassword": "",
   "movement": {
     "enabled": true,
-    "interval": 8,
-    "moveDuration": 3,
-    "sprint": true,
-    "jumpOverObstacles": true,
+    "walkTime": 0,
+    "runTime": 60,
+    "runShare": 100,
+    "pause": 0,
+    "wanderRadius": 24,
     "avoidWalls": true,
-    "wallDetectionDistance": 1.5,
-    "turnArc": 120
+    "jumpOverObstacles": true,
+    "avoidWater": true
   },
-
   "combat": {
     "enabled": true,
     "hostileOnly": true,
-    "range": 4.5,
-    "attackInterval": 1.0,
-    "targetHealth": 20
+    "range": 16,
+    "crits": true,
+    "autoEquip": true
   },
-
   "reconnect": {
     "enabled": true,
-    "delay": 10,
+    "delay": 5,
     "maxAttempts": 0
   },
-
   "webServer": {
     "enabled": true,
     "port": 3000

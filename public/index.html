@@ -3,752 +3,1204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  <!-- PWA Manifest -->
+  <meta name="theme-color" content="#070a08" />
+  <meta name="description" content="Control your Minecraft AFK bot - walks, runs, attacks mobs and keeps your Aternos server awake." />
   <link rel="manifest" href="/manifest.json" />
-
-  <!-- Theme & Colors -->
-  <meta name="theme-color" content="#3b82f6" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)" />
-  <meta name="background-color" content="#0f1117" />
-
-  <!-- iOS PWA Support -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="AFK Bot" />
-  <meta name="mobile-web-app-capable" content="yes" />
-
-  <!-- App Icons -->
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-
-  <!-- SEO / Social -->
-  <meta name="description" content="Monitor and control your Minecraft AFK bot from any device." />
-  <meta name="application-name" content="AFK Bot Dashboard" />
-
-  <!-- Windows Tile -->
-  <meta name="msapplication-TileColor" content="#3b82f6" />
-  <meta name="msapplication-tap-highlight" content="no" />
-
-  <!-- Service Worker -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js")
-          .then((reg) => console.log("[PWA] Service Worker registered:", reg.scope))
-          .catch((err) => console.warn("[PWA] Service Worker registration failed:", err));
-      });
-    }
-  </script>
-
-  <title>AFK Bot Dashboard</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="AFK Bot" />
+  <title>AFK/BOT - Dashboard</title>
 
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1e293b;
-      --surface-2: #273449;
-      --primary: #3b82f6;
-      --primary-light: #60a5fa;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --error: #ef4444;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --border: #334155;
-      --radius: 12px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --bg: #070a08;
+      --panel: rgba(13, 20, 16, 0.82);
+      --panel-solid: #0b120e;
+      --field: #09100c;
+      --line: rgba(74, 222, 128, 0.16);
+      --line-strong: rgba(74, 222, 128, 0.34);
+      --green: #4ade80;
+      --green-bright: #86efac;
+      --green-soft: rgba(74, 222, 128, 0.08);
+      --text: #dfeee2;
+      --muted: #7f9386;
+      --red: #e2504a;
+      --red-soft: #f87171;
+      --blue: #60a5fa;
+      --amber: #fbbf24;
+      --violet: #c084fc;
+      --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --radius: 10px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    html, body { height: 100%; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      padding: 0 0 48px;
     }
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 24px 20px;
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(74, 222, 128, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74, 222, 128, 0.055) 1px, transparent 1px);
+      background-size: 46px 46px;
+      -webkit-mask-image: radial-gradient(120% 80% at 50% -10%, #000 25%, rgba(0,0,0,0.35) 60%, transparent 100%);
+      mask-image: radial-gradient(120% 80% at 50% -10%, #000 25%, rgba(0,0,0,0.35) 60%, transparent 100%);
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 32px;
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(60% 40% at 50% 0%, rgba(74, 222, 128, 0.10), transparent 70%);
     }
 
-    header img {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-    }
-
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    header p {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-
-    .card h2 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      background: var(--surface-2);
-      border-radius: 10px;
-      padding: 14px;
-      text-align: center;
-    }
-
-    .stat .label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-
-    .stat .value {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--primary-light);
-    }
-
-    .stat .value.green { color: var(--success); }
-    .stat .value.amber { color: var(--warning); }
-    .stat .value.red { color: var(--error); }
-
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .toggle-row:last-child { border-bottom: none; }
-
-    .toggle-row span {
-      font-size: 0.95rem;
-    }
-
-    .toggle-row span small {
-      color: var(--text-muted);
-      display: block;
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-
-    .toggle {
+    .app {
       position: relative;
-      width: 48px;
-      height: 26px;
-      background: var(--surface-2);
-      border-radius: 13px;
-      cursor: pointer;
-      transition: background 0.2s;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 26px 28px 0;
     }
 
-    .toggle.active {
-      background: var(--primary);
-      border-color: var(--primary);
-    }
-
-    .toggle::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-
-    .toggle.active::after {
-      transform: translateX(22px);
-    }
-
-    .slider-row {
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .slider-row:last-child { border-bottom: none; }
-
-    .slider-row .slider-header {
+    /* ---------------------------------------------------------- top bar */
+    .topbar {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding-bottom: 20px;
     }
 
-    .slider-row .slider-header span:first-child {
-      font-size: 0.95rem;
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 42px; height: 42px; flex: 0 0 auto; filter: drop-shadow(0 0 12px rgba(74, 222, 128, 0.28)); }
+
+    .brand h1 {
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #eefaf0;
+      line-height: 1;
+    }
+    .brand h1 .afk { color: var(--green); }
+    .tagline {
+      margin-top: 6px;
+      font-size: 10px;
+      letter-spacing: 0.19em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
-    .slider-row .slider-header span:last-child {
-      font-size: 0.9rem;
-      color: var(--primary-light);
-      font-weight: 600;
-    }
+    .topbar-actions { display: flex; align-items: center; gap: 12px; }
 
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: var(--surface-2);
-      appearance: none;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--primary);
-      cursor: pointer;
-    }
-
-    .badge {
+    .chip {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.8rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-weight: 500;
+      gap: 9px;
+      padding: 9px 15px;
+      border-radius: 6px;
+      font-size: 12px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      border: 1px solid var(--line-strong);
+      background: var(--green-soft);
+      color: var(--green);
+      white-space: nowrap;
+    }
+    .chip .sq { width: 8px; height: 8px; background: currentColor; display: inline-block; }
+    .chip.is-offline { color: var(--red-soft); border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
+    .chip.is-connecting { color: var(--amber); border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
+    .chip.is-online .sq { animation: blink 1.9s ease-in-out infinite; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    .chip-lock {
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--amber);
+      border: 1px dashed rgba(251, 191, 36, 0.5);
+      background: rgba(251, 191, 36, 0.07);
+      padding: 5px 9px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+    .chip-plain.is-warn { color: var(--amber); border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.08); }
+    .chip-plain.is-bad { color: var(--red-soft); border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.08); }
+    .chip-plain {
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 5px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
     }
 
-    .badge.online {
-      background: rgba(34,197,94,0.15);
-      color: var(--success);
-    }
-
-    .badge.offline {
-      background: rgba(239,68,68,0.15);
-      color: var(--error);
-    }
-
-    .badge .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    #installBtn {
-      display: none;
-      width: 100%;
-      padding: 14px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    #installBtn:hover {
-      background: #2563eb;
-    }
-
-    #installBtn.show {
-      display: block;
-    }
-
-    .log {
-      background: #0b0d12;
-      border-radius: 8px;
-      padding: 12px;
-      max-height: 240px;
-      overflow-y: auto;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.82rem;
-      line-height: 1.6;
-    }
-
-    .log-line {
-      color: var(--text-muted);
-    }
-
-    .log-line .time {
-      color: #64748b;
-      margin-right: 8px;
-    }
-
-    .refresh-btn {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .refresh-btn:hover {
-      background: var(--surface);
-    }
-
-    .control-btn {
-      flex: 1;
-      padding: 12px 20px;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
+    /* ----------------------------------------------------------- buttons */
+    .btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 9px;
+      padding: 11px 18px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s, opacity 0.15s;
+    }
+    .btn .ic { width: 15px; height: 15px; }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-stop { background: var(--red); border-color: #f0726d; color: #fff; }
+    .btn-stop:hover:not(:disabled) { background: #ef5f58; }
+    .btn-start { background: rgba(74, 222, 128, 0.14); border-color: var(--line-strong); color: var(--green-bright); }
+    .btn-start:hover:not(:disabled) { background: rgba(74, 222, 128, 0.22); }
+
+    .btn-block { width: 100%; padding: 15px; font-size: 13.5px; }
+    .btn-ghost { background: rgba(74, 222, 128, 0.06); border-color: var(--line-strong); color: var(--green-bright); }
+    .btn-ghost:hover:not(:disabled) { background: rgba(74, 222, 128, 0.15); }
+
+    .icon-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .icon-btn .ic { width: 16px; height: 16px; }
+    .icon-btn:hover { color: var(--green-bright); border-color: var(--line-strong); background: var(--green-soft); }
+    .icon-btn.send { border-color: var(--line-strong); color: var(--green); }
+
+    /* ------------------------------------------------------------- layout */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+    .panel {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 7px;
+      pointer-events: none;
+      border: 1px solid rgba(74, 222, 128, 0.06);
     }
 
-    .control-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .control-btn.start {
-      background: var(--success);
-      color: #052e16;
-    }
-
-    .control-btn.start:hover:not(:disabled) {
-      background: #16a34a;
-    }
-
-    .control-btn.start:active:not(:disabled) {
-      transform: scale(0.97);
-    }
-
-    .control-btn.stop {
-      background: var(--error);
-      color: #450a0a;
-    }
-
-    .control-btn.stop:hover:not(:disabled) {
-      background: #dc2626;
-    }
-
-    .control-btn.stop:active:not(:disabled) {
-      transform: scale(0.97);
-    }
-
-    .control-row {
+    .panel-head {
       display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .uptime-display {
-      background: var(--surface-2);
-      border-radius: 10px;
-      padding: 16px 20px;
-      text-align: center;
-      margin-top: 14px;
-    }
-
-    .uptime-display .label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
-
-    .uptime-display .timer {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary-light);
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 1px;
-    }
-
-    .bot-state-badge {
-      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-weight: 500;
-      margin-top: 10px;
-    }
-
-    .bot-state-badge.online {
-      background: rgba(34,197,94,0.15);
-      color: var(--success);
-    }
-
-    .bot-state-badge.connecting {
-      background: rgba(245,158,11,0.15);
-      color: var(--warning);
-    }
-
-    .bot-state-badge.offline {
-      background: rgba(239,68,68,0.15);
-      color: var(--error);
-    }
-
-    .bot-state-badge .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: pulse 2s infinite;
-    }
-
-    .card-header-row {
-      display: flex;
       justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 13px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-head h2 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--green-bright);
+    }
+    .panel-head .right { display: flex; align-items: center; gap: 8px; }
+
+    .subhead {
+      display: flex;
       align-items: center;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin: 18px 0 12px;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .subhead::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+    /* ------------------------------------------------------------- fields */
+    .field-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    .field-grid + .field-grid { margin-top: 14px; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+    .field-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .field-grid.three > * { grid-column: span 1; }
+
+    .field { display: block; min-width: 0; }
+    .field > span {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .card-header-row h2 { margin-bottom: 0; }
+    input[type="text"], input[type="number"], input[type="password"], .console-input input {
+      width: 100%;
+      background: var(--field);
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      border-radius: 6px;
+      color: #e7f4ea;
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 10px 12px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input::placeholder { color: #55675c; }
+    input:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.13);
+    }
+    input:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    @media (max-width: 480px) {
-      .container { padding: 16px 12px; }
-      header img { width: 44px; height: 44px; border-radius: 10px; }
-      header h1 { font-size: 1.2rem; }
-      .stat .value { font-size: 1.3rem; }
+    .unit { position: relative; display: block; }
+    .unit input { padding-right: 30px; }
+    .unit i {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 13px;
+      height: 13px;
+      border: 1px solid var(--line-strong);
+      background: rgba(74, 222, 128, 0.22);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    .hint { margin-top: 9px; font-size: 11px; color: #5f7266; letter-spacing: 0.02em; }
+    .hint b { color: var(--muted); font-weight: 500; }
+
+    /* ------------------------------------------------------------ toggles */
+    .toggle {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(74, 222, 128, 0.025);
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 9px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .toggle:hover { border-color: var(--line-strong); }
+    .toggle .box {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      border: 1px solid var(--line-strong);
+      background: var(--field);
+      display: grid;
+      place-items: center;
+      margin-top: 2px;
+    }
+    .toggle.on .box { background: var(--green); border-color: var(--green); }
+    .toggle.on .box::after {
+      content: "";
+      width: 4px;
+      height: 9px;
+      border-right: 2px solid #06180d;
+      border-bottom: 2px solid #06180d;
+      transform: rotate(42deg) translate(-1px, -1px);
+    }
+    .toggle .label { display: block; font-size: 12.5px; font-weight: 600; color: #e2f0e5; }
+    .toggle .desc { display: block; font-size: 11.5px; color: #6d8274; margin-top: 3px; }
+    .toggle.locked { opacity: 0.55; cursor: not-allowed; }
+
+    /* ------------------------------------------------------------ sliders */
+    .sliders { display: flex; flex-direction: column; gap: 14px; }
+    .slider-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .slider-head .num { color: var(--green-bright); font-size: 12px; letter-spacing: 0.04em; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, rgba(74, 222, 128, 0.6), rgba(74, 222, 128, 0.12));
+      cursor: pointer;
+    }
+    input[type="range"]:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: var(--green);
+      border: 1px solid #04120a;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border-radius: 3px;
+      background: var(--green);
+      border: 1px solid #04120a;
+    }
+
+    /* -------------------------------------------------------------- stats */
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(74, 222, 128, 0.028);
+      padding: 12px 13px;
+      min-width: 0;
+    }
+    .stat .top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 9.5px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .stat .top .ic { width: 15px; height: 15px; color: var(--green); flex: 0 0 auto; }
+    .stat .val {
+      margin-top: 9px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #eaf7ec;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat .val.is-good { color: var(--green-bright); }
+    .stat .val.is-warn { color: var(--amber); }
+    .stat .val.is-bad { color: var(--red-soft); }
+    .stat .val.is-idle { color: #63776a; }
+    .stat .val.small { font-size: 15px; }
+
+    /* ------------------------------------------------------------ console */
+    .console-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+    .console {
+      height: 356px;
+      overflow-y: auto;
+      background: #050806;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      font-size: 12.3px;
+      line-height: 1.7;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(74, 222, 128, 0.3) transparent;
+    }
+    .console::-webkit-scrollbar { width: 9px; }
+    .console::-webkit-scrollbar-track { background: transparent; }
+    .console::-webkit-scrollbar-thumb { background: rgba(74, 222, 128, 0.26); border-radius: 5px; }
+
+    .line { display: flex; gap: 10px; align-items: flex-start; }
+    .line .t { flex: 0 0 auto; color: #47604f; }
+    .line .c { flex: 0 0 auto; width: 58px; font-weight: 600; letter-spacing: 0.05em; }
+    .line .m { flex: 1; min-width: 0; color: #b6c7ba; word-break: break-word; }
+    .c.SYSTEM { color: #4ade80; }
+    .c.MOVE { color: var(--blue); }
+    .c.COMBAT { color: var(--red-soft); }
+    .c.CHAT { color: var(--violet); }
+    .c.CONFIG { color: var(--amber); }
+    .c.ERROR { color: #fb7185; }
+    .line.is-error .m { color: #f5a3a3; }
+
+    .console-empty { color: #465a4c; font-size: 12px; }
+
+    .console-input { display: flex; gap: 10px; }
+    .console-input input { flex: 1; padding: 12px 14px; font-size: 12.5px; }
+
+    /* -------------------------------------------------------------- toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translate(-50%, 16px);
+      z-index: 40;
+      padding: 11px 18px;
+      border-radius: 6px;
+      border: 1px solid var(--line-strong);
+      background: rgba(10, 20, 13, 0.96);
+      color: var(--green-bright);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.9);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.bad { border-color: rgba(248, 113, 113, 0.5); color: #fca5a5; }
+
+    /* --------------------------------------------------------- responsive */
+    @media (max-width: 1020px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .app { padding: 20px 18px 0; }
+    }
+    @media (max-width: 640px) {
+      .app { padding: 16px 13px 0; }
+      .brand h1 { font-size: 22px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .field-grid.three { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+      .span-4, .span-3, .span-2 { grid-column: span 6; }
+      .console { height: 300px; }
+      .topbar-actions { width: 100%; }
+      .topbar-actions .btn { flex: 1; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <img src="/icons/icon-192.png" alt="AFK Bot Logo" />
-      <div>
-        <h1>AFK Bot Dashboard</h1>
-        <p>Minecraft AFK Bot Control Panel</p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <g id="i-heart"><path d="M12 20.5S4 15.6 4 10.4A5.4 5.4 0 0 1 12 6.9a5.4 5.4 0 0 1 8 3.5c0 5.2-8 10.1-8 10.1z"/></g>
+      <g id="i-food"><circle cx="12" cy="14" r="6.2"/><path d="M12 7.8c0-2.1 1-3.3 3-3.3"/></g>
+      <g id="i-pin"><path d="M12 21.5s7-5.6 7-11.5a7 7 0 1 0-14 0c0 5.9 7 11.5 7 11.5z"/><circle cx="12" cy="10" r="2.6"/></g>
+      <g id="i-users"><circle cx="9.2" cy="8.2" r="3.2"/><path d="M3.2 20c0-3.4 2.7-5.3 6-5.3s6 1.9 6 5.3"/><path d="M16.2 6.2a3 3 0 0 1 0 5.6"/><path d="M17.4 15.2c2.2.6 3.4 2.3 3.4 4.8"/></g>
+      <g id="i-target"><circle cx="12" cy="12" r="7.2"/><path d="M12 1.8v4M12 18.2v4M1.8 12h4M18.2 12h4"/><circle cx="12" cy="12" r="1.4"/></g>
+      <g id="i-sword"><path d="M20.5 3.5 10.8 13.2"/><path d="M17.4 2.6h4v4"/><path d="m3.4 20.5 3.2-3.2"/><path d="m5.6 13.9 4.5 4.5"/></g>
+      <g id="i-clock"><circle cx="12" cy="12" r="8.2"/><path d="M12 6.8V12l3.6 2.2"/></g>
+      <g id="i-refresh"><path d="M20.2 12a8.2 8.2 0 1 1-2.4-5.8"/><path d="M20.6 4.2v4.4h-4.4"/></g>
+      <g id="i-stop"><rect x="7" y="7" width="10" height="10" rx="1.6"/></g>
+      <g id="i-play"><path d="M8 5.2 19 12 8 18.8z"/></g>
+      <g id="i-save"><path d="M4.5 4.5h10.5l4.5 4.5v10.5h-15z"/><path d="M8.5 4.5v5h6v-5"/><path d="M8 19v-6h8v6"/></g>
+      <g id="i-trash"><path d="M4 7h16"/><path d="M9.5 7V4.2h5V7"/><path d="m6.4 7 .9 13h9.4l.9-13"/></g>
+      <g id="i-send"><path d="M3.2 20 21 12 3.2 4l3.6 8z"/></g>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,1.6 30.4,9.6 16,17.6 1.6,9.6" fill="#6ec254"/>
+          <polygon points="16,17.6 30.4,9.6 30.4,12.8 16,20.8" fill="#5aa53f"/>
+          <polygon points="16,20.8 30.4,12.8 30.4,22.2 16,30.2" fill="#8a5a30"/>
+          <polygon points="16,17.6 1.6,9.6 1.6,12.8 16,20.8" fill="#4c8f36"/>
+          <polygon points="16,20.8 1.6,12.8 1.6,22.2 16,30.2" fill="#6f4524"/>
+        </svg>
+        <div>
+          <h1><span class="afk">AFK</span>/BOT</h1>
+          <p class="tagline">Keeps your Aternos server awake</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="chip is-offline" id="connChip"><span class="sq"></span><span id="connText">Offline</span></span>
+        <button class="btn btn-start" id="topBtn">
+          <svg class="ic" id="topBtnIcon"><use href="#i-play"></use></svg><span id="topBtnLabel">Start bot</span>
+        </button>
       </div>
     </header>
 
-    <button id="installBtn">Install App</button>
+    <main class="layout">
+      <div class="col">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Server</h2>
+            <span class="chip-lock" id="editLock" hidden>Stop bot to edit</span>
+          </div>
 
-    <div class="control-row">
-      <button class="control-btn start" id="startBtn" onclick="startBot()"><span class="spinner"></span><span class="btn-label">Start Bot</span></button>
-      <button class="control-btn stop" id="stopBtn" onclick="stopBot()" disabled><span class="spinner"></span><span class="btn-label">Stop Bot</span></button>
-    </div>
+          <div class="field-grid">
+            <label class="field span-4">
+              <span>Server address</span>
+              <input id="f-ip" type="text" spellcheck="false" placeholder="yourserver.aternos.me" />
+            </label>
+            <label class="field span-2">
+              <span>Port</span>
+              <span class="unit"><input id="f-port" type="number" min="1" max="65535" /><i></i></span>
+            </label>
+          </div>
+          <p class="hint">e.g. <b>yourname.aternos.me</b> &nbsp;&middot;&nbsp; Aternos port is on your server page</p>
 
-    <div class="card">
-      <div class="card-header-row">
-        <h2>Bot Status</h2>
-        <span id="connBadge" class="badge offline"><span class="dot"></span> Connecting</span>
-      </div>
-      <div class="stat-grid" id="statGrid">
-        <div class="stat">
-          <div class="label">Memory</div>
-          <div class="value" id="memory">--</div>
-        </div>
-        <div class="stat">
-          <div class="label">Health</div>
-          <div class="value" id="healthVal">--</div>
-        </div>
-        <div class="stat">
-          <div class="label">Food</div>
-          <div class="value" id="foodVal">--</div>
-        </div>
-      </div>
-      <div class="uptime-display">
-        <div class="label">Time on Server</div>
-        <div class="timer" id="liveUptime">00:00:00</div>
-        <div id="botStateBadge" class="bot-state-badge offline"><span class="dot"></span> Offline</div>
-      </div>
-      <div style="margin-top: 14px;">
-        <button class="refresh-btn" onclick="fetchStatus()">Refresh</button>
-      </div>
-    </div>
+          <div class="field-grid">
+            <label class="field span-3">
+              <span>Bot username</span>
+              <input id="f-name" type="text" spellcheck="false" maxlength="16" placeholder="afk_bot" />
+            </label>
+            <label class="field span-3">
+              <span>Version</span>
+              <input id="f-version" type="text" spellcheck="false" placeholder="auto" />
+            </label>
+          </div>
+          <p class="hint">3&ndash;16 chars, cracked/offline mode &nbsp;&middot;&nbsp; blank = auto-detect</p>
+        </section>
 
-    <div class="card">
-      <h2>Movement</h2>
-      <div class="toggle-row">
-        <span>Enabled<small>Random wandering movement</small></span>
-        <div class="toggle active" data-setting="movement.enabled"></div>
-      </div>
-      <div class="toggle-row">
-        <span>Sprint<small>Run instead of walk</small></span>
-        <div class="toggle active" data-setting="movement.sprint"></div>
-      </div>
-      <div class="toggle-row">
-        <span>Avoid Walls<small>Turn away from obstacles</small></span>
-        <div class="toggle active" data-setting="movement.avoidWalls"></div>
-      </div>
-      <div class="toggle-row">
-        <span>Jump Obstacles<small>Hop over 1-block tall obstacles</small></span>
-        <div class="toggle active" data-setting="movement.jumpOverObstacles"></div>
-      </div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span>Move Interval</span>
-          <span id="intervalVal">8s</span>
-        </div>
-        <input type="range" min="2" max="30" step="1" value="8" data-setting="movement.interval" oninput="updateSliderLabel(this, 'intervalVal', 's')" />
-      </div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span>Move Duration</span>
-          <span id="durationVal">3s</span>
-        </div>
-        <input type="range" min="1" max="15" step="1" value="3" data-setting="movement.moveDuration" oninput="updateSliderLabel(this, 'durationVal', 's')" />
-      </div>
-    </div>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Behaviour</h2>
+            <span class="chip-plain" id="saveState">Saved</span>
+          </div>
 
-    <div class="card">
-      <h2>Combat</h2>
-      <div class="toggle-row">
-        <span>Enabled<small>Attack nearby mobs</small></span>
-        <div class="toggle active" data-setting="combat.enabled"></div>
-      </div>
-      <div class="toggle-row">
-        <span>Hostile Only<small>Ignore passive animals</small></span>
-        <div class="toggle active" data-setting="combat.hostileOnly"></div>
-      </div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span>Attack Range</span>
-          <span id="rangeVal">4.5</span>
-        </div>
-        <input type="range" min="2" max="8" step="0.5" value="4.5" data-setting="combat.range" oninput="updateSliderLabel(this, 'rangeVal', '')" />
-      </div>
-    </div>
+          <div class="toggle" id="tg-move">
+            <span class="box"></span>
+            <span>
+              <span class="label">Random movement</span>
+              <span class="desc">Walks, jumps, sneaks and looks around</span>
+            </span>
+          </div>
+          <div class="toggle" id="tg-combat">
+            <span class="box"></span>
+            <span>
+              <span class="label">Attack mobs</span>
+              <span class="desc">Hunts nearby hostile mobs, auto-equips best weapon</span>
+            </span>
+          </div>
+          <div class="toggle" id="tg-reconnect">
+            <span class="box"></span>
+            <span>
+              <span class="label">Auto reconnect</span>
+              <span class="desc">Rejoins if kicked or the server restarts</span>
+            </span>
+          </div>
+          <div class="toggle" id="tg-water">
+            <span class="box"></span>
+            <span>
+              <span class="label">Avoid deep water</span>
+              <span class="desc">Turns away from oceans, lakes and rivers (puddles are fine)</span>
+            </span>
+          </div>
 
-    <div class="card">
-      <div class="card-header-row">
-        <h2>Activity Log</h2>
-        <button class="refresh-btn" onclick="clearLog()">Clear</button>
+          <div class="field-grid three" style="margin-top:14px">
+            <label class="field">
+              <span>Attack range</span>
+              <span class="unit"><input id="f-range" type="number" min="2" max="64" /><i></i></span>
+            </label>
+            <label class="field">
+              <span>Wander radius</span>
+              <span class="unit"><input id="f-wander" type="number" min="0" max="256" /><i></i></span>
+            </label>
+            <label class="field">
+              <span>Reconnect (s)</span>
+              <span class="unit"><input id="f-reconnectDelay" type="number" min="1" max="600" /><i></i></span>
+            </label>
+          </div>
+
+          <div class="subhead">How much it walks &amp; runs</div>
+          <div class="sliders">
+            <div>
+              <div class="slider-head"><label for="f-walkTime">Walk time per burst</label><span class="num" id="v-walkTime">4s</span></div>
+              <input id="f-walkTime" type="range" min="0" max="60" step="1" />
+            </div>
+            <div>
+              <div class="slider-head"><label for="f-runTime">Run (sprint) time per burst</label><span class="num" id="v-runTime">6s</span></div>
+              <input id="f-runTime" type="range" min="0" max="60" step="1" />
+            </div>
+            <div>
+              <div class="slider-head"><label for="f-runShare">Run share of bursts</label><span class="num" id="v-runShare">60%</span></div>
+              <input id="f-runShare" type="range" min="0" max="100" step="5" />
+            </div>
+            <div>
+              <div class="slider-head"><label for="f-pause">Pause between bursts</label><span class="num" id="v-pause">6s</span></div>
+              <input id="f-pause" type="range" min="0" max="120" step="1" />
+            </div>
+          </div>
+
+          <label class="field" style="margin-top:18px">
+            <span>AuthMe password</span>
+            <input id="f-authme" type="password" spellcheck="false" placeholder="leave empty if not needed" autocomplete="new-password" />
+          </label>
+          <p class="hint">optional &mdash; sends /register &amp; /login on join</p>
+
+          <button class="btn btn-ghost btn-block" id="saveBtn" style="margin-top:18px">
+            <svg class="ic"><use href="#i-save"></use></svg>Save config
+          </button>
+        </section>
       </div>
-      <div class="log" id="logBox"></div>
-    </div>
+
+      <div class="col">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Live status</h2>
+            <span class="chip-plain" id="versionChip">MC &mdash;</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-heart"></use></svg>Health</div>
+              <div class="val is-idle" id="s-health">&mdash;</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-food"></use></svg>Food</div>
+              <div class="val is-idle" id="s-food">&mdash;</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-pin"></use></svg>Position</div>
+              <div class="val small is-idle" id="s-position">&mdash;</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-users"></use></svg>Players</div>
+              <div class="val is-idle" id="s-players">&mdash;</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-target"></use></svg>Target</div>
+              <div class="val is-idle" id="s-target">none</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-sword"></use></svg>Kills / crits</div>
+              <div class="val is-idle" id="s-kills">0 / 0</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-clock"></use></svg>Online for</div>
+              <div class="val small is-idle" id="s-online">&mdash;</div>
+            </div>
+            <div class="stat">
+              <div class="top"><svg class="ic"><use href="#i-refresh"></use></svg>Reconnects</div>
+              <div class="val is-idle" id="s-reconnects">0</div>
+            </div>
+          </div>
+
+          <button class="btn btn-stop btn-block" id="bigBtn" style="margin-top:16px">
+            <svg class="ic" id="bigBtnIcon"><use href="#i-stop"></use></svg><span id="bigBtnLabel">Stop bot</span>
+          </button>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Console</h2>
+            <div class="right">
+              <button class="icon-btn" id="clearBtn" title="Clear console" aria-label="Clear console">
+                <svg class="ic"><use href="#i-trash"></use></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="console-wrap">
+            <div class="console" id="console">
+              <div class="console-empty">Waiting for the bot&hellip;</div>
+            </div>
+            <div class="console-input">
+              <input id="cmdInput" type="text" spellcheck="false" placeholder="Send chat or /command as the bot" />
+              <button class="icon-btn send" id="sendBtn" title="Send" aria-label="Send">
+                <svg class="ic"><use href="#i-send"></use></svg>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
   </div>
 
+  <div class="toast" id="toast"></div>
+
   <script>
-    let deferredPrompt = null;
+    const $ = (id) => document.getElementById(id);
+    const MAX_LINES = 300;
 
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById("installBtn").classList.add("show");
-    });
+    let config = null;
+    let running = false;
+    let botState = "offline";
+    let onlineSeconds = 0;
+    let lastStateAt = Date.now();
+    let cmdHistory = [];
+    let historyIndex = -1;
 
-    document.getElementById("installBtn").addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log("[PWA] Install outcome:", outcome);
-      deferredPrompt = null;
-      document.getElementById("installBtn").classList.remove("show");
-    });
+    /* ------------------------------------------------------------ helpers */
 
-    window.addEventListener("appinstalled", () => {
-      console.log("[PWA] App installed successfully");
-      document.getElementById("installBtn").classList.remove("show");
-    });
-
-    function updateSliderLabel(input, labelId, suffix) {
-      document.getElementById(labelId).textContent = input.value + suffix;
+    async function api(path, options) {
+      const opts = Object.assign({ cache: "no-store" }, options || {});
+      const isGet = !opts.method || opts.method === "GET";
+      // cache buster: a reload must never be answered from a stale cache
+      const url = isGet ? path + (path.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now() : path;
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch (e) { data = { message: text }; }
+      if (!res.ok) throw new Error((data && data.message) || ("HTTP " + res.status));
+      return data;
     }
 
-    document.querySelectorAll(".toggle").forEach((t) => {
-      t.addEventListener("click", () => {
-        t.classList.toggle("active");
-        const setting = t.dataset.setting;
-        const active = t.classList.contains("active");
-        addLog(`Setting ${setting} ${active ? "enabled" : "disabled"}`);
-      });
-    });
+    function toast(message, bad) {
+      const el = $("toast");
+      el.textContent = message;
+      el.className = "toast show" + (bad ? " bad" : "");
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.className = "toast"; }, 2400);
+    }
 
-    let serverUptime = 0;
-    let lastFetchTime = Date.now();
-    let botOnServer = false;
+    function formatDuration(total) {
+      const s = Math.max(0, Math.floor(total));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      if (h > 0) return h + "h " + m + "m " + sec + "s";
+      if (m > 0) return m + "m " + sec + "s";
+      return sec + "s";
+    }
 
-    async function fetchStatus() {
+    function setVal(id, text, cls, small) {
+      const el = $(id);
+      el.textContent = text;
+      el.className = "val" + (small ? " small" : "") + (cls ? " " + cls : "");
+    }
+
+    /* ------------------------------------------------------------- config */
+
+    const DRAFT_KEY = "afkbot.draft.v1";
+    const formInputIds = ["f-ip", "f-port", "f-name", "f-version", "f-range", "f-wander", "f-reconnectDelay", "f-authme"];
+    let saveTimer = null;
+    let saving = false;
+    let editSeq = 0; // counts edits, so a save can tell if it was overtaken
+
+    function setSaveState(text, cls) {
+      const el = $("saveState");
+      if (!el) return;
+      el.textContent = text;
+      el.className = "chip-plain" + (cls ? " " + cls : "");
+    }
+
+    /* the user's edits, kept locally so a reload can never lose them */
+    function draftPatch() {
+      const patch = collectForm();
+      delete patch.authmePassword; // the password never goes into local storage
+      return patch;
+    }
+    function storeDraft() {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draftPatch())); } catch (e) {}
+    }
+    function clearDraft() {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    }
+    function readDraft() {
       try {
-        const res = await fetch("/status");
-        const data = await res.json();
-        serverUptime = data.uptime;
-        lastFetchTime = Date.now();
-        document.getElementById("memory").textContent = data.memory;
+        const raw = localStorage.getItem(DRAFT_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
 
-        if (data.bot) {
-          const bs = data.bot;
-          const badge = document.getElementById("connBadge");
-          const stateBadge = document.getElementById("botStateBadge");
+    /* the same shape as collectForm(), built from the server config */
+    function patchFromConfig(cfg) {
+      return {
+        ip: cfg.ip || "",
+        port: Number(cfg.port) || 0,
+        name: cfg.name || "",
+        version: cfg.version || "auto",
+        movement: {
+          enabled: !!cfg.movement.enabled,
+          walkTime: Number(cfg.movement.walkTime),
+          runTime: Number(cfg.movement.runTime),
+          runShare: Number(cfg.movement.runShare),
+          pause: Number(cfg.movement.pause),
+          wanderRadius: Number(cfg.movement.wanderRadius),
+          avoidWater: !!cfg.movement.avoidWater
+        },
+        combat: { enabled: !!cfg.combat.enabled, range: Number(cfg.combat.range) },
+        reconnect: { enabled: !!cfg.reconnect.enabled, delay: Number(cfg.reconnect.delay) }
+      };
+    }
+    function samePatch(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
-          if (bs.botState === "online") {
-            badge.className = "badge online";
-            badge.innerHTML = '<span class="dot"></span> Online';
-            stateBadge.className = "bot-state-badge online";
-            stateBadge.innerHTML = '<span class="dot"></span> In Game';
-          } else if (bs.botState === "connecting") {
-            badge.className = "badge offline";
-            badge.innerHTML = '<span class="dot"></span> Connecting';
-            stateBadge.className = "bot-state-badge connecting";
-            stateBadge.innerHTML = '<span class="dot"></span> Connecting';
-          } else if (bs.botState === "dead") {
-            badge.className = "badge offline";
-            badge.innerHTML = '<span class="dot"></span> Dead';
-            stateBadge.className = "bot-state-badge offline";
-            stateBadge.innerHTML = '<span class="dot"></span> Respawning';
-          } else {
-            badge.className = "badge offline";
-            badge.innerHTML = '<span class="dot"></span> Offline';
-            stateBadge.className = "bot-state-badge offline";
-            stateBadge.innerHTML = '<span class="dot"></span> Offline';
-          }
+    function onFormEdited(delay) {
+      if (running) return; // settings stay locked while the bot is connected
+      editSeq++;
+      setSaveState("Unsaved changes", "is-warn");
+      storeDraft();
+      scheduleAutoSave(delay);
+    }
 
-          document.getElementById("healthVal").textContent = bs.health !== null ? bs.health.toFixed(0) : "--";
-          document.getElementById("foodVal").textContent = bs.food !== null ? bs.food : "--";
+    function scheduleAutoSave(delay) {
+      if (running || saving) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveConfig({ auto: true }), delay === undefined ? 700 : delay);
+    }
 
-          if (bs.health !== null) {
-            const hv = document.getElementById("healthVal");
-            hv.className = "value" + (bs.health > 15 ? " green" : bs.health > 5 ? " amber" : " red");
-          }
+    const sliderIds = ["f-walkTime", "f-runTime", "f-runShare", "f-pause"];
+    const labelIds = { "f-walkTime": "v-walkTime", "f-runTime": "v-runTime", "f-runShare": "v-runShare", "f-pause": "v-pause" };
 
-          if (bs.botState === "online") {
-            serverUptime = bs.serverTime || 0;
-            lastFetchTime = Date.now();
-            botOnServer = true;
-          } else {
-            botOnServer = false;
-          }
+    function setToggle(id, on) {
+      $(id).classList.toggle("on", !!on);
+    }
 
-          updateControlButtons(bs.running);
+    function syncSliderLabels() {
+      $("v-walkTime").textContent = $("f-walkTime").value + "s";
+      $("v-runTime").textContent = $("f-runTime").value + "s";
+      $("v-runShare").textContent = $("f-runShare").value + "%";
+      $("v-pause").textContent = $("f-pause").value + "s";
+    }
+
+    function fillForm(cfg) {
+      $("f-ip").value = cfg.ip || "";
+      $("f-port").value = cfg.port || "";
+      $("f-name").value = cfg.name || "";
+      $("f-version").value = cfg.version || "auto";
+      $("f-range").value = cfg.combat.range;
+      $("f-wander").value = cfg.movement.wanderRadius;
+      $("f-reconnectDelay").value = cfg.reconnect.delay;
+      $("f-walkTime").value = cfg.movement.walkTime;
+      $("f-runTime").value = cfg.movement.runTime;
+      $("f-runShare").value = cfg.movement.runShare;
+      $("f-pause").value = cfg.movement.pause;
+      $("f-authme").value = "";
+      $("f-authme").placeholder = cfg.authmePasswordSet ? "saved - type to replace" : "leave empty if not needed";
+      setToggle("tg-move", cfg.movement.enabled);
+      setToggle("tg-combat", cfg.combat.enabled);
+      setToggle("tg-reconnect", cfg.reconnect.enabled);
+      setToggle("tg-water", cfg.movement.avoidWater);
+      syncSliderLabels();
+    }
+
+    function collectForm() {
+      const patch = {
+        ip: $("f-ip").value.trim(),
+        port: Number($("f-port").value),
+        name: $("f-name").value.trim(),
+        version: $("f-version").value.trim() || "auto",
+        movement: {
+          enabled: $("tg-move").classList.contains("on"),
+          walkTime: Number($("f-walkTime").value),
+          runTime: Number($("f-runTime").value),
+          runShare: Number($("f-runShare").value),
+          pause: Number($("f-pause").value),
+          wanderRadius: Number($("f-wander").value),
+          avoidWater: $("tg-water").classList.contains("on")
+        },
+        combat: {
+          enabled: $("tg-combat").classList.contains("on"),
+          range: Number($("f-range").value)
+        },
+        reconnect: {
+          enabled: $("tg-reconnect").classList.contains("on"),
+          delay: Number($("f-reconnectDelay").value)
         }
+      };
+      const password = $("f-authme").value;
+      if (password !== "") patch.authmePassword = password;
+      return patch;
+    }
+
+    async function loadConfig() {
+      config = await api("/api/config");
+      fillForm(config);
+      return config;
+    }
+
+    async function saveConfig(options) {
+      const auto = !!(options && options.auto);
+      const btn = $("saveBtn");
+      const seqAtStart = editSeq;
+      saving = true;
+      setSaveState("Saving...");
+      try {
+        const res = await api("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(collectForm())
+        });
+        config = res.config;
+        clearDraft();
+        if (!auto) fillForm(config);
+        setSaveState("Saved");
+        if (!auto) toast("Config saved");
       } catch (err) {
-        const badge = document.getElementById("connBadge");
-        badge.className = "badge offline";
-        badge.innerHTML = '<span class="dot"></span> Offline';
-        const stateBadge = document.getElementById("botStateBadge");
-        stateBadge.className = "bot-state-badge offline";
-        stateBadge.innerHTML = '<span class="dot"></span> Offline';
-        botOnServer = false;
-        addLog("Failed to fetch status");
+        setSaveState("Not saved", "is-bad");
+        toast("Could not save: " + err.message, true);
+      } finally {
+        saving = false;
+        btn.disabled = running;
+        // the user kept typing while this request was in flight: save again
+        if (auto && editSeq !== seqAtStart && !running) scheduleAutoSave(300);
       }
     }
 
-    function updateLiveUptime() {
-      if (!botOnServer) {
-        document.getElementById("liveUptime").textContent = "00:00:00";
-        return;
-      }
-      const elapsed = serverUptime + (Date.now() - lastFetchTime) / 1000;
-      const h = Math.floor(elapsed / 3600);
-      const m = Math.floor((elapsed % 3600) / 60);
-      const s = Math.floor(elapsed % 60);
-      document.getElementById("liveUptime").textContent =
-        String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
-    }
-
-    function updateControlButtons(running) {
-      const startBtn = document.getElementById("startBtn");
-      const stopBtn = document.getElementById("stopBtn");
-      startBtn.classList.remove("loading");
-      stopBtn.classList.remove("loading");
-      startBtn.disabled = running;
-      stopBtn.disabled = !running;
-    }
+    /* ---------------------------------------------------------- bot control */
 
     async function startBot() {
-      const btn = document.getElementById("startBtn");
-      btn.classList.add("loading");
-      btn.disabled = true;
-      addLog("Starting bot...");
       try {
-        const res = await fetch("/api/start", { method: "POST" });
-        const data = await res.json();
-        addLog(data.message);
-        fetchStatus();
+        await api("/api/start", { method: "POST" });
+        toast("Starting bot...");
       } catch (err) {
-        addLog("Failed to start bot");
-        btn.classList.remove("loading");
-        btn.disabled = false;
+        toast(err.message, true);
       }
     }
 
     async function stopBot() {
-      const btn = document.getElementById("stopBtn");
-      btn.classList.add("loading");
-      btn.disabled = true;
-      addLog("Stopping bot...");
       try {
-        const res = await fetch("/api/stop", { method: "POST" });
-        const data = await res.json();
-        addLog(data.message);
-        fetchStatus();
+        await api("/api/stop", { method: "POST" });
+        toast("Bot stopped");
       } catch (err) {
-        addLog("Failed to stop bot");
-        btn.classList.remove("loading");
-        btn.disabled = false;
+        toast(err.message, true);
       }
     }
 
-    function addLog(msg) {
-      const logBox = document.getElementById("logBox");
-      const line = document.createElement("div");
-      line.className = "log-line";
-      const time = new Date().toLocaleTimeString();
-      line.innerHTML = '<span class="time">' + time + '</span>' + msg;
-      logBox.appendChild(line);
-      logBox.scrollTop = logBox.scrollHeight;
+    /* ----------------------------------------------------------- rendering */
+
+    function renderState(s) {
+      running = s.running;
+      botState = s.botState;
+      lastStateAt = Date.now();
+
+      const labels = { online: "Online", connecting: "Connecting", dead: "Respawning", offline: "Offline" };
+      $("connText").textContent = labels[botState] || "Offline";
+      $("connChip").className = "chip " +
+        (botState === "online" ? "is-online" : botState === "connecting" ? "is-connecting" : "is-offline");
+
+      $("topBtnLabel").textContent = running ? "Stop bot" : "Start bot";
+      $("topBtn").className = "btn " + (running ? "btn-stop" : "btn-start");
+      $("topBtnIcon").querySelector("use").setAttribute("href", running ? "#i-stop" : "#i-play");
+      $("bigBtnLabel").textContent = running ? "Stop bot" : "Start bot";
+      $("bigBtn").className = "btn btn-block " + (running ? "btn-stop" : "btn-start");
+      $("bigBtnIcon").querySelector("use").setAttribute("href", running ? "#i-stop" : "#i-play");
+
+      const locked = running;
+      ["f-ip", "f-port", "f-name", "f-version", "f-range", "f-wander", "f-reconnectDelay",
+        "f-walkTime", "f-runTime", "f-runShare", "f-pause", "f-authme"].forEach((id) => {
+        $(id).disabled = locked;
+      });
+      ["tg-move", "tg-combat", "tg-reconnect", "tg-water"].forEach((id) => $(id).classList.toggle("locked", locked));
+      $("saveBtn").disabled = locked;
+      $("editLock").hidden = !locked;
+
+      $("versionChip").textContent = "MC " + (s.version || "\u2014");
+
+      if (botState === "online") {
+        const health = s.health === null ? 0 : s.health;
+        setVal("s-health", Math.round(health) + "/20", health > 15 ? "is-good" : health > 5 ? "is-warn" : "is-bad");
+        setVal("s-food", (s.food === null ? 0 : s.food) + "/20", s.food > 6 ? "is-good" : "is-warn");
+        setVal("s-position", s.position ? s.position.x + ", " + s.position.y + ", " + s.position.z : "\u2014", null, true);
+        setVal("s-players", String(s.players));
+      } else {
+        setVal("s-health", "\u2014", "is-idle");
+        setVal("s-food", "\u2014", "is-idle");
+        setVal("s-position", "\u2014", "is-idle", true);
+        setVal("s-players", "\u2014", "is-idle");
+      }
+
+      const target = s.target && s.target !== "none" ? s.target : "none";
+      setVal("s-target", target, target === "none" ? "is-idle" : "is-bad");
+      setVal("s-kills", s.kills + " / " + s.crits, s.kills > 0 ? "is-good" : "is-idle");
+      setVal("s-reconnects", String(s.reconnects), s.reconnects > 0 ? "is-warn" : "is-idle");
+
+      onlineSeconds = s.onlineFor;
+      renderOnlineFor();
     }
 
-    function clearLog() {
-      document.getElementById("logBox").innerHTML = "";
+    function renderOnlineFor() {
+      if (botState !== "online") {
+        setVal("s-online", "\u2014", "is-idle", true);
+        return;
+      }
+      const elapsed = onlineSeconds + (Date.now() - lastStateAt) / 1000;
+      setVal("s-online", formatDuration(elapsed), "is-good", true);
     }
 
-    fetchStatus();
-    setInterval(fetchStatus, 5000);
-    setInterval(updateLiveUptime, 1000);
-    addLog("Dashboard initialized");
+    function addLine(entry) {
+      const consoleEl = $("console");
+      const empty = consoleEl.querySelector(".console-empty");
+      if (empty) empty.remove();
+
+      const atBottom = consoleEl.scrollHeight - consoleEl.scrollTop - consoleEl.clientHeight < 60;
+      const row = document.createElement("div");
+      row.className = "line" + (entry.cat === "ERROR" ? " is-error" : "");
+
+      const time = document.createElement("span");
+      time.className = "t";
+      time.textContent = new Date(entry.t).toLocaleTimeString("en-GB", { hour12: false });
+
+      const cat = document.createElement("span");
+      cat.className = "c " + entry.cat;
+      cat.textContent = entry.cat;
+
+      const msg = document.createElement("span");
+      msg.className = "m";
+      msg.textContent = entry.msg;
+
+      row.appendChild(time);
+      row.appendChild(cat);
+      row.appendChild(msg);
+      consoleEl.appendChild(row);
+
+      while (consoleEl.children.length > MAX_LINES) consoleEl.removeChild(consoleEl.firstChild);
+      if (atBottom) consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function clearConsole() {
+      $("console").innerHTML = '<div class="console-empty">Console cleared.</div>';
+    }
+
+    /* ---------------------------------------------------------------- live */
+
+    function connectEvents() {
+      const source = new EventSource("/api/events");
+      source.onmessage = (event) => {
+        let payload = null;
+        try { payload = JSON.parse(event.data); } catch (e) { return; }
+        if (payload.type === "log") {
+          addLine(payload.log);
+        } else if (payload.type === "logs") {
+          $("console").innerHTML = "";
+          payload.logs.forEach(addLine);
+        } else if (payload.type === "state") {
+          renderState(payload.state);
+          if (!config && payload.config) {
+            config = payload.config;
+            fillForm(config);
+          }
+        }
+      };
+    }
+
+    /* -------------------------------------------------------------- events */
+
+    document.querySelectorAll(".toggle").forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        if (toggle.classList.contains("locked")) return;
+        toggle.classList.toggle("on");
+        onFormEdited(150);
+      });
+    });
+
+    sliderIds.forEach((id) => {
+      $(id).addEventListener("input", () => { syncSliderLabels(); onFormEdited(500); });
+    });
+
+    formInputIds.forEach((id) => {
+      const el = $(id);
+      el.addEventListener("input", () => onFormEdited(800));
+      el.addEventListener("change", () => onFormEdited(200));
+    });
+
+    $("saveBtn").addEventListener("click", saveConfig);
+    $("clearBtn").addEventListener("click", clearConsole);
+    $("topBtn").addEventListener("click", () => (running ? stopBot() : startBot()));
+    $("bigBtn").addEventListener("click", () => (running ? stopBot() : startBot()));
+
+    async function sendCommand() {
+      const input = $("cmdInput");
+      const message = input.value.trim();
+      if (!message) return;
+      try {
+        await api("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message })
+        });
+        cmdHistory.push(message);
+        historyIndex = cmdHistory.length;
+        input.value = "";
+      } catch (err) {
+        toast(err.message, true);
+      }
+    }
+
+    $("sendBtn").addEventListener("click", sendCommand);
+    $("cmdInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        sendCommand();
+      } else if (event.key === "ArrowUp") {
+        if (historyIndex > 0) historyIndex--;
+        $("cmdInput").value = cmdHistory[historyIndex] || "";
+        event.preventDefault();
+      } else if (event.key === "ArrowDown") {
+        if (historyIndex < cmdHistory.length - 1) historyIndex++;
+        else historyIndex = cmdHistory.length;
+        $("cmdInput").value = cmdHistory[historyIndex] || "";
+        event.preventDefault();
+      }
+    });
+
+    /* ---------------------------------------------------------------- boot */
+
+    async function boot() {
+      try {
+        config = await api("/api/config");
+        fillForm(config);
+        setSaveState("Saved");
+        const draft = readDraft();
+        if (draft && !samePatch(draft, patchFromConfig(config))) {
+          // the page was reloaded before the edits reached the bot: put them
+          // back on screen and save them again
+          fillForm(draft);
+          setSaveState("Unsaved changes", "is-warn");
+          scheduleAutoSave(600);
+        } else if (draft) {
+          clearDraft();
+        }
+      } catch (err) {
+        setSaveState("Offline", "is-bad");
+        toast("Could not load config: " + err.message, true);
+      }
+    }
+
+    boot();
+    api("/api/state").then(renderState).catch(() => {});
+    connectEvents();
+    setInterval(renderOnlineFor, 1000);
+
+    if ("serviceWorker" in navigator) {
+      const hadController = !!navigator.serviceWorker.controller;
+      let reloaded = false;
+      // when an updated service worker takes over (for example after the
+      // caching fix), reload once so the page is never left on stale data
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hadController && !reloaded) {
+          reloaded = true;
+          window.location.reload();
+        }
+      });
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").then((reg) => reg.update()).catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>
