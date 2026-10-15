@@ -11,12 +11,21 @@ REM ============================================================
 setlocal
 title Aternos AFK bot - install autostart
 
+REM Can the bot start at all? Either Node.js is installed on this PC, or the
+REM ready-to-run download brought its own copy in runtime\. Without one of the
+REM two the shortcut would do nothing useful, so nothing is changed.
+set "AFK_HAS_NODE="
 where node >nul 2>nul
-if errorlevel 1 (
+if not errorlevel 1 set "AFK_HAS_NODE=1"
+if not defined AFK_HAS_NODE if exist "%~dp0runtime\node.exe" set "AFK_HAS_NODE=1"
+
+if not defined AFK_HAS_NODE (
   echo.
-  echo   Node.js is not installed yet, so the bot could not run at login.
-  echo   Your browser is opening https://nodejs.org - install the LTS
-  echo   version, then double-click this file again.
+  echo   Node.js is not installed yet, and there is no runtime folder next to
+  echo   this file either, so the bot could not start at login.
+  echo.
+  echo   Your browser is opening https://nodejs.org - install the LTS version,
+  echo   then double-click this file again.
   echo.
   start "" https://nodejs.org/en/download
   pause
@@ -31,10 +40,11 @@ if not exist "%~dp0node_modules\mineflayer" (
   echo.
 )
 
-REM The shortcut runs start.bat, the same file you would double-click. The
-REM --no-browser argument stops the dashboard opening a tab at every login.
-REM Values are handed to PowerShell through environment variables so that a
-REM path containing spaces cannot break the command line.
+REM The shortcut runs start.bat, the same file you would double-click - it uses
+REM the bundled runtime when there is one. The --no-browser argument stops the
+REM dashboard opening a tab at every login. Values are handed to PowerShell
+REM through environment variables so that a path containing spaces cannot break
+REM the command line.
 set "AFK_TARGET=%~dp0start.bat"
 set "AFK_DIR=%~dp0"
 

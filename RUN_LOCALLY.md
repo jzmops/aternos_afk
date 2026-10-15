@@ -39,6 +39,14 @@ You do **not** need them to get the bot online today.
 
 ### Just want it running today?
 
+**The ready-to-run way — nothing to install.** Download
+**[AFK-Bot-windows-x64.zip](https://github.com/jzmops/aternos_afk/releases/latest)**
+from Releases, right-click it → **Extract All…**, then double-click **`start.bat`**
+in the folder that appears — the download is about 70 MB. Node.js and the bot's
+parts are already inside that package, so there is nothing to install and the
+first start downloads nothing. It is Windows-only, because the package carries
+a Windows copy of Node.js.
+
 **The one-click way.** Install **Node.js LTS** from https://nodejs.org — during
 setup **tick the box that says "Add to PATH"**. That is the only thing you have
 to install, and skipping that tick is the #1 beginner problem. Then put the
@@ -79,8 +87,11 @@ npm start
 
 Four things, in order — nothing hidden, and nothing is deleted:
 
-1. **Checks Node.js.** If it is missing, it opens https://nodejs.org and tells you
-   what to install instead of flashing an error and vanishing.
+1. **Checks Node.js.** It uses the copy in the project's `runtime` folder when
+   there is one — that is what the ready-to-run download ships, and it is why
+   that package needs nothing installed. Otherwise it uses the Node.js on your
+   PC, and if there is neither it opens https://nodejs.org and tells you what to
+   install instead of flashing an error and vanishing.
 2. **Downloads the bot's parts** (`npm ci`) — but only the first time. Later runs
    skip straight past it.
 3. **Starts the bot** on the port from `config.json` and **opens the dashboard**
@@ -110,9 +121,10 @@ prompt, and the download happens only once.
 To stop the bot: click the terminal window and press **Ctrl+C**.
 To start it again later: open PowerShell, run `cd $HOME\Desktop\aternos_afk`, then `npm start`.
 
-> **If any of this feels like too much — you don't have to do it yourself.**
-> I can prepare a ready-to-run folder (or a ZIP) so the only step left on your PC
-> is installing Node.js and double-clicking a file.
+> **If any of this feels like too much — skip it.** The ready-to-run ZIP from
+> [Releases](https://github.com/jzmops/aternos_afk/releases/latest) already holds
+> Node.js and the bot's parts, so the only steps left are extracting the ZIP and
+> double-clicking `start.bat`.
 
 ---
 
@@ -127,10 +139,14 @@ To start it again later: open PowerShell, run `cd $HOME\Desktop\aternos_afk`, th
 That's it. `express` and `mineflayer` are installed automatically by npm — you
 never install those by hand. No Docker, no Python, no database.
 
-**You can skip this table entirely.** `start-no-install.bat` and
-`start-no-install.sh` download a private copy of Node.js into the project's
-`runtime` folder and run the bot with that, so there is nothing to install and
-no Administrator prompt. It costs about 40 MB of disk space.
+**You can skip this table entirely.** The ready-to-run ZIP from
+[Releases](https://github.com/jzmops/aternos_afk/releases/latest) carries Node.js
+and the bot's parts inside it already — extract it and double-click `start.bat`.
+If you would rather start from the files in this repository,
+`start-no-install.bat` and `start-no-install.sh` download a private copy of
+Node.js into the project's `runtime` folder and run the bot with that, so there
+is nothing to install and no Administrator prompt. It costs about 40 MB of disk
+space.
 
 **System requirements:** Windows 10/11 (64-bit), macOS, or any 64-bit Linux.
 
@@ -153,6 +169,9 @@ PATH" — reinstall Node and tick that box, then open a *new* terminal.
 ---
 
 ## Part 1 — Get the code — read this first
+
+> **Downloaded the ready-to-run ZIP instead?** Then you can skip this part — the
+> code is already inside it, and `start.bat` is waiting in the extracted folder.
 
 Pick **one** of the two options below. They give you exactly the same files;
 Option A is easier to update later, Option B needs no extra software.
@@ -264,6 +283,8 @@ log in. Nothing else to configure, and no Administrator prompt.
   Windows update reboots the PC, the bot is back at your next login.
 - The dashboard does **not** pop open in a browser at every login (the shortcut
   passes `--no-browser`). Open http://localhost:3000 yourself when you want it.
+- It works in the ready-to-run download too, where no Node.js is installed on
+  the PC at all — the shortcut uses the copy inside that package.
 - It will not restart the bot if the process ever *dies* mid-session — for that,
   use the PM2 route below or rely on the bot's own crash handlers.
 

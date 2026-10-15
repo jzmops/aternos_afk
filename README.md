@@ -24,6 +24,15 @@ reconnects on its own if the server restarts.
 
 ## Setup
 
+**Nothing to install (Windows, easiest):** download
+**[AFK-Bot-windows-x64.zip](https://github.com/jzmops/aternos_afk/releases/latest)**
+from Releases, right-click it → **Extract All…**, then double-click **`start.bat`**
+in the folder that appears (a ~70 MB download). Node.js and the bot's
+dependencies are already inside that package, so nothing gets installed and the
+first start downloads nothing. (No release yet? The action that builds it is
+[`build-portable.yml`](.github/workflows/build-portable.yml) — run it from the
+**Actions** tab.)
+
 **One file, no commands:** install [Node.js](https://nodejs.org) LTS — ticking
 **"Add to PATH"** on Windows — then
 
@@ -187,3 +196,26 @@ its own once the server is online.
 | `start-no-install.bat` / `start-no-install.sh` | Same, but fetches a private copy of Node.js into `runtime/` first, so nothing has to be installed |
 | `install-autostart.bat` / `remove-autostart.bat` | Windows: make the bot start at login, and undo it (no PM2, no admin rights) |
 | `scripts/launch.js` | What those two run: checks Node.js, installs dependencies, opens the dashboard, connects the bot |
+| `scripts/build-portable.js` | Builds the ready-to-run Windows ZIP in `dist/` (see below) |
+| `.github/workflows/build-portable.yml` | GitHub Action that builds that ZIP and attaches it to a Release |
+
+## Building the ready-to-run download
+
+`AFK-Bot-windows-x64.zip` is this project with a copy of Node.js in `runtime/`
+and the dependencies already in `node_modules/`, so it needs no installation and
+downloads nothing on its first start. The GitHub Action
+[`.github/workflows/build-portable.yml`](.github/workflows/build-portable.yml)
+builds it — push a `v1.0.0`-style tag, or press **Run workflow** in the
+**Actions** tab — publishes it on the Release and keeps a copy as a workflow
+artifact.
+
+To build the same ZIP yourself, put the Windows Node.js build in `runtime/`,
+run `npm ci`, then:
+
+```bash
+node scripts/build-portable.js
+```
+
+It prints the entry count, the final size and the SHA-256, and writes
+`dist/AFK-Bot-windows-x64.zip`. Add `--no-zip` to only assemble and check
+`dist/AFK-Bot`. Both `runtime/` and `dist/` are gitignored.

@@ -1,0 +1,169 @@
+# Builds the ready-to-run Windows download: this project, plus Node.js in
+# runtime\ and the installed node_modules\, zipped as AFK-Bot-windows-x64.zip.
+# Whoever downloads it extracts the folder and double-clicks start.bat — no
+# Node.js to install and nothing to download on the first start.
+#
+# Two ways to get a package:
+#   * push a tag such as v1.0.0  -> builds it and attaches the ZIP to a Release
+#   * Actions -> "Build the ready-to-run Windows package" -> Run workflow
+#     (fill in the optional tag box as well to also publish a Release)
+#
+# The ZIP is built on a Windows runner on purpose: the dependencies are then
+# installed by the same Windows npm that the package carries, so nothing inside
+# it can have been resolved for a different platform.
+name: Build the ready-to-run Windows package
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_version:
+        description: Node.js version to bundle inside the package
+        required: false
+        default: v24.22.0
+      release_tag:
+        description: Release tag to publish to (for example v1.0.0). Leave empty to only keep the downloadable artifact.
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portable-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  portable:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      # The same version the start scripts download, so both routes agree.
+      # github.event.inputs rather than inputs: this job also runs on a tag
+      # push, where there is no dispatch form, and github.event always exists.
+      NODE_VERSION: ${{ github.event.inputs.node_version || 'v24.22.0' }}
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Download the Node.js runtime the package will carry
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = "https://nodejs.org/dist/$env:NODE_VERSION/node-$env:NODE_VERSION-win-x64.zip"
+          Write-Host "Downloading $url"
+          $zip = Join-Path $env:RUNNER_TEMP 'node-win-x64.zip'
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          $unpacked = Join-Path $env:RUNNER_TEMP 'node-unpacked'
+          Remove-Item $unpacked -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $zip -DestinationPath $unpacked -Force
+
+          # The archive wraps everything in a node-vX-win-x64 folder; flatten it
+          # into runtime\ because that is where start.bat and friends look.
+          $inner = Get-ChildItem -LiteralPath $unpacked -Directory | Select-Object -First 1
+          New-Item -ItemType Directory -Force -Path 'runtime' | Out-Null
+          Get-ChildItem -LiteralPath $inner.FullName -Force | Move-Item -Destination 'runtime' -Force
+
+          if (-not (Test-Path 'runtime\node.exe')) { throw 'runtime\node.exe is missing after unpacking' }
+          .\runtime\node.exe -v
+
+      - name: Install the bot's parts with that same runtime
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The bundled runtime goes first on PATH so its npm does the install.
+          $env:PATH = "$(Resolve-Path 'runtime');$env:PATH"
+          npm ci
+          if (-not (Test-Path 'node_modules\mineflayer\package.json')) {
+            throw 'npm ci did not produce node_modules\mineflayer'
+          }
+
+      - name: Assemble and zip the package
+        run: .\runtime\node.exe scripts\build-portable.js
+
+      - name: Extract the ZIP again and start it on this Windows machine
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $verify = Join-Path $env:RUNNER_TEMP 'verify'
+          Remove-Item $verify -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath 'dist\AFK-Bot-windows-x64.zip' -DestinationPath $verify -Force
+
+          $ex = Join-Path $verify 'AFK-Bot'
+          foreach ($needed in @('start.bat', 'runtime\node.exe', 'node_modules\mineflayer\package.json', 'READ-ME-FIRST.txt')) {
+            if (-not (Test-Path (Join-Path $ex $needed))) { throw "the extracted package has no $needed" }
+          }
+
+          # Boot the dashboard but do not connect to any server: this checks the
+          # package, not somebody's Aternos account. Pressing start in the
+          # dashboard would need the bot's real server to be online. No browser
+          # either - a runner has nobody watching it.
+          $env:AFK_NO_AUTOSTART = '1'
+          $env:AFK_NO_BROWSER = '1'
+          $log = Join-Path $verify 'start.log'
+          $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'start.bat' `
+            -WorkingDirectory $ex -PassThru `
+            -RedirectStandardOutput $log -RedirectStandardError (Join-Path $verify 'start-error.log')
+
+          try {
+            $answered = $false
+            foreach ($attempt in 1..60) {
+              Start-Sleep -Seconds 1
+              try {
+                $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3000' -TimeoutSec 5
+                if ($response.StatusCode -eq 200) { $answered = $true; break }
+              } catch { }
+            }
+            if (-not $answered) { throw 'the dashboard never answered on port 3000' }
+
+            Write-Host 'The extracted package started and answered on http://127.0.0.1:3000'
+            Get-Content $log | Select-String -Pattern 'Node.js|Dashboard|Bot:' | ForEach-Object { Write-Host $_ }
+          } finally {
+            try { taskkill /PID $proc.Id /T /F *> $null } catch { }
+          }
+
+      - name: Summarise what was built
+        run: |
+          $zip = Get-ChildItem dist\*.zip | Select-Object -First 1
+          $sha = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
+          Add-Content $env:GITHUB_STEP_SUMMARY "### $($zip.Name)"
+          Add-Content $env:GITHUB_STEP_SUMMARY "- size: $([math]::Round($zip.Length / 1MB, 1)) MB"
+          Add-Content $env:GITHUB_STEP_SUMMARY "- sha256: $sha"
+          Add-Content $env:GITHUB_STEP_SUMMARY "- bundled Node.js: $env:NODE_VERSION"
+          Add-Content $env:GITHUB_STEP_SUMMARY "- commit: $env:GITHUB_SHA"
+
+      - name: Keep the ZIP as a downloadable artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: AFK-Bot-windows-x64
+          path: dist/AFK-Bot-windows-x64.zip
+          if-no-files-found: error
+          # The ZIP is already compressed and large; re-compressing it would
+          # only spend minutes of runner time.
+          compression-level: 0
+          retention-days: 14
+          overwrite: true
+
+      - name: Publish it on a Release
+        if: ${{ github.event_name == 'push' || github.event.inputs.release_tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.release_tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = (Get-ChildItem dist\*.zip | Select-Object -First 1).FullName
+
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG --title $env:TAG --generate-notes
+            if ($LASTEXITCODE -ne 0) { throw "could not create the release $env:TAG" }
+          }
+
+          gh release upload $env:TAG $zip --clobber
+          if ($LASTEXITCODE -ne 0) { throw "could not upload the ZIP to $env:TAG" }
+
+          gh release view $env:TAG --json assets --jq '.assets[].name'
