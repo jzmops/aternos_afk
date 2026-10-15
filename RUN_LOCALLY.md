@@ -165,7 +165,8 @@ npm ci
 ## Part 2 — First run (test it)
 
 In the project folder, either **double-click `start.bat`** (Windows) / run
-**`./start.sh`** (Linux, macOS, Raspberry Pi), or start it by hand with:
+**`./start.sh`** (Linux, macOS, Raspberry Pi — if it answers *Permission denied*,
+run `sh start.sh` instead), or start it by hand with:
 
 ```
 npm start
