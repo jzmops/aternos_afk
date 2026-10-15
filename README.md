@@ -45,6 +45,10 @@ example `PORT=3002 npm start`). The launchers hand the bot straight to the
 server; if you would rather it wait for the **Start bot** button, run them with
 `AFK_NO_AUTOSTART=1` set.
 
+**Windows, start at login:** double-click **`install-autostart.bat`** once. It
+adds the bot to your Startup folder — no PM2 and no Administrator prompt — and
+`remove-autostart.bat` undoes it.
+
 1. Type your server address and port in the **Server** panel
 2. Adjust **Behaviour** (movement, combat, reconnect)
 3. Everything saves as you edit — the chip in the Behaviour panel shows
@@ -175,4 +179,5 @@ its own once the server is online.
 | `public/index.html` | The dashboard (single file, no build step) |
 | `config.json` | Saved settings |
 | `start.bat` / `start.sh` | One-click start for Windows / Linux, macOS and Raspberry Pi |
+| `install-autostart.bat` / `remove-autostart.bat` | Windows: make the bot start at login, and undo it (no PM2, no admin rights) |
 | `scripts/launch.js` | What those two run: checks Node.js, installs dependencies, opens the dashboard, connects the bot |

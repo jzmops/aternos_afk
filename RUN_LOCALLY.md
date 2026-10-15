@@ -232,7 +232,28 @@ crash guard, so this is a second safety net.)
 
 ## Part 4 — Start automatically when the PC boots
 
-### Windows (Task Scheduler)
+### Windows — one double-click, no PM2, no admin
+
+Double-click **`install-autostart.bat`**. It puts a shortcut called *AFK Bot*
+into your Windows **Startup** folder, so the bot starts by itself every time you
+log in. Nothing else to configure, and no Administrator prompt.
+
+- A black window appears at each login — that is the bot running, exactly as if
+  you had double-clicked `start.bat`. Closing the window stops the bot.
+- **To undo it:** double-click **`remove-autostart.bat`**. By hand: press
+  `Win+R`, type `shell:startup`, and delete the *AFK Bot* shortcut. That folder
+  is the whole mechanism — there is no registry entry to hunt for.
+- It starts the bot when **you** log in, which is what a home PC wants. After a
+  Windows update reboots the PC, the bot is back at your next login.
+- The dashboard does **not** pop open in a browser at every login (the shortcut
+  passes `--no-browser`). Open http://localhost:3000 yourself when you want it.
+- It will not restart the bot if the process ever *dies* mid-session — for that,
+  use the PM2 route below or rely on the bot's own crash handlers.
+
+### Windows — the PM2 way (adds crash-restart)
+
+Use this instead if you want a supervisor restarting the bot after a process
+crash as well. It needs an Administrator prompt for the scheduled task.
 
 1. Create a file called `start-afk-bot.bat` in the project folder:
 
@@ -255,13 +276,6 @@ Check / remove it:
 schtasks /query /tn "AFK Bot" /v /fo list
 schtasks /delete /tn "AFK Bot" /f
 ```
-
-**Easiest alternative:** press `Win+R`, type `shell:startup`, and drop a
-shortcut to `start-afk-bot.bat` in the folder that opens.
-
-**Not using PM2?** Point the task (or the `shell:startup` shortcut) at
-`start.bat` in the project folder instead — it starts the bot on its own, just
-leave the window it opens alone.
 
 Notes:
 

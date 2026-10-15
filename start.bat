@@ -25,7 +25,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-node "%~dp0scripts\launch.js"
+node "%~dp0scripts\launch.js" %*
 
 echo.
 echo   The bot has stopped. You can close this window.

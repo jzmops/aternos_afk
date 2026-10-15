@@ -10,8 +10,12 @@
  * The plain `npm start` route still works and does none of the above — this
  * file only adds convenience on top of it.
  *
- * Environment variables:
+ * Arguments and environment variables:
+ *   --no-browser         do not open the dashboard in a browser (the bot still
+ *                        starts); used by the "start at login" shortcut, where
+ *                        a browser window at every login would be unwelcome
  *   PORT                 override the dashboard port
+ *   AFK_NO_BROWSER=1     same as --no-browser
  *   AFK_NO_AUTOSTART=1   boot the dashboard but do not connect the bot
  */
 
@@ -23,6 +27,9 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const MIN_NODE_MAJOR = 18;
 const NO_AUTOSTART = /^(1|true|yes)$/i.test(String(process.env.AFK_NO_AUTOSTART || ""));
+const NO_BROWSER =
+  process.argv.slice(2).some((arg) => /^--?no-?browser$/i.test(arg)) ||
+  /^(1|true|yes)$/i.test(String(process.env.AFK_NO_BROWSER || ""));
 const PORT_WAIT_MS = 15000;
 const CONFIG_PATH = path.join(ROOT, "config.json");
 
@@ -188,7 +195,12 @@ async function main() {
     if (await waitForPort(port, PORT_WAIT_MS)) {
       out("");
       out("  Dashboard:  " + url);
-      if (!openBrowser(url)) out("  Open that address in your browser to see it.");
+      if (NO_BROWSER) {
+        out("  Not opening a browser (started at login) - open that address whenever");
+        out("  you want to check on the bot.");
+      } else if (!openBrowser(url)) {
+        out("  Open that address in your browser to see it.");
+      }
     } else {
       out("");
       out("  The dashboard did not answer on port " + port + ".");
