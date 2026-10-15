@@ -20,6 +20,9 @@ if errorlevel 1 (
   echo   3. Tick the box that says "Add to PATH" during setup
   echo   4. Restart this PC, then double-click start.bat again
   echo.
+  echo   Rather not install Node.js at all? Double-click
+  echo   start-no-install.bat instead - it brings its own copy.
+  echo.
   start "" https://nodejs.org/en/download
   pause
   exit /b 1

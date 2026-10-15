@@ -33,6 +33,11 @@ reconnects on its own if the server restarts.
 That downloads the dependencies on the first run, starts the dashboard, opens it
 in your browser and connects the bot for you. Nothing else to type.
 
+**Rather not install Node.js at all?** Double-click **`start-no-install.bat`**
+(Windows) or run **`./start-no-install.sh`** (Linux/macOS). The first run fetches
+an official copy of Node.js into a `runtime` folder beside the bot — no
+installer, no Administrator rights, nothing changed outside that folder.
+
 **Or by hand:**
 
 ```bash
@@ -179,5 +184,6 @@ its own once the server is online.
 | `public/index.html` | The dashboard (single file, no build step) |
 | `config.json` | Saved settings |
 | `start.bat` / `start.sh` | One-click start for Windows / Linux, macOS and Raspberry Pi |
+| `start-no-install.bat` / `start-no-install.sh` | Same, but fetches a private copy of Node.js into `runtime/` first, so nothing has to be installed |
 | `install-autostart.bat` / `remove-autostart.bat` | Windows: make the bot start at login, and undo it (no PM2, no admin rights) |
 | `scripts/launch.js` | What those two run: checks Node.js, installs dependencies, opens the dashboard, connects the bot |

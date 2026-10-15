@@ -1,5 +1,10 @@
 node_modules/
 .env
+
+# The private copy of Node.js that start-no-install.bat / .sh fetches, plus the
+# archive it downloads. These are tens of megabytes of binaries - never commit.
+runtime/
+runtime-download.*
 vite.config.js.timestamp-*.mjs
 vite.config.mjs.timestamp-*.mjs
 vite.config.cjs.timestamp-*.mjs

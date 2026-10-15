@@ -49,6 +49,13 @@ That is the whole job. It downloads the bot's parts the first time, starts the
 bot, opens the dashboard in your browser and connects to your server. On Linux,
 macOS or a Raspberry Pi, run `./start.sh` instead — same thing, same result.
 
+> **Want to skip installing Node.js as well?** You can. Put the project folder
+> on your PC and **double-click `start-no-install.bat`** (or run
+> `./start-no-install.sh` on Linux, macOS or a Raspberry Pi). The first run
+> downloads an official copy of Node.js into a `runtime` folder inside the
+> project and uses that — no installer, no Administrator prompt, and nothing
+> outside the project folder is changed.
+
 **Or do it by hand.** Same result, one command at a time:
 
 1. Install **Git** from https://git-scm.com/downloads (or skip it and use the ZIP in [Part 1](#part-1--get-the-code--read-this-first)).
@@ -85,6 +92,11 @@ Four things, in order — nothing hidden, and nothing is deleted:
 The window stays open while the bot runs: closing it, or pressing **Ctrl+C**,
 stops the bot.
 
+`start-no-install.bat` and `start-no-install.sh` do those same four things, but
+when Node.js is missing they first download an official copy into the project's
+`runtime` folder and run the bot with that — no installer, no Administrator
+prompt, and the download happens only once.
+
 ### What each of those five lines did
 
 | Line | Plain English |
@@ -114,6 +126,11 @@ To start it again later: open PowerShell, run `cd $HOME\Desktop\aternos_afk`, th
 
 That's it. `express` and `mineflayer` are installed automatically by npm — you
 never install those by hand. No Docker, no Python, no database.
+
+**You can skip this table entirely.** `start-no-install.bat` and
+`start-no-install.sh` download a private copy of Node.js into the project's
+`runtime` folder and run the bot with that, so there is nothing to install and
+no Administrator prompt. It costs about 40 MB of disk space.
 
 **System requirements:** Windows 10/11 (64-bit), macOS, or any 64-bit Linux.
 
